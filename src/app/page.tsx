@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Truck } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -84,11 +90,21 @@ export default function LoginPage() {
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
-             <div className="mt-4 text-center text-sm">
-                <a href="#" className="underline text-muted-foreground hover:text-primary">
-                  Forgot Password?
-                </a>
-            </div>
+             <Accordion type="single" collapsible className="w-full mt-6">
+              <AccordionItem value="item-1" className="border-b-0">
+                <AccordionTrigger className="text-sm text-muted-foreground py-2 hover:no-underline justify-center">
+                  Need credentials to test?
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="text-sm text-muted-foreground space-y-2 pt-4 mt-2 border-t">
+                    <p className="font-semibold text-foreground">Log in with one of the following:</p>
+                    <p>• <strong>Driver:</strong> driver01 / pass123</p>
+                    <p>• <strong>Dock Worker:</strong> dock01 / pass123</p>
+                    <p>• <strong>Warehouse Manager:</strong> manager01 / pass123</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </CardContent>
         </Card>
       </div>
