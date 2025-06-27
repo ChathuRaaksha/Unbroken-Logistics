@@ -87,11 +87,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-       <footer className="mt-4 text-center text-sm text-muted-foreground">
-        <p>Driver: driver01 / pass123</p>
-        <p>Dock Worker: dock01 / pass123</p>
-        <p>Manager: manager01 / pass123</p>
-      </footer>
     </main>
   );
 }
