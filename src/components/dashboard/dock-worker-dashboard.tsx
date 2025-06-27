@@ -1,21 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownToLine, ScanLine, Warehouse } from "lucide-react";
+import { Package, GitBranch, ClipboardCheck } from "lucide-react";
 
 const dockWorkerActions = [
   {
-    title: "Incoming Shipments",
-    icon: <ArrowDownToLine className="h-8 w-8 text-primary" />,
-    description: "View and process all incoming shipments for today.",
+    title: "Pending Shipments",
+    icon: <Package className="h-8 w-8 text-primary" />,
+    description: "View and process shipments awaiting action at the dock.",
   },
   {
-    title: "Scan Packages",
-    icon: <ScanLine className="h-8 w-8 text-primary" />,
-    description: "Scan barcodes to update package status in the system.",
+    title: "Handoff Tracking",
+    icon: <GitBranch className="h-8 w-8 text-primary" />,
+    description: "Display all items that need to be handed off.",
   },
   {
-    title: "Load/Unload Truck",
-    icon: <Warehouse className="h-8 w-8 text-primary" />,
-    description: "Manage loading and unloading tasks for scheduled trucks.",
+    title: "Log Package Condition",
+    icon: <ClipboardCheck className="h-8 w-8 text-primary" />,
+    description: "Log package conditions (e.g., Good, Damaged, Lost).",
   },
 ];
 

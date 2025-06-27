@@ -1,38 +1,72 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Map, Truck, PackageCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Map, Truck, PackageCheck, ScanLine, Clock, MapPin } from "lucide-react";
 
-const driverActions = [
+// Mock data for active shipments
+const activeShipments = [
   {
-    title: "My Routes",
-    icon: <Map className="h-8 w-8 text-primary" />,
-    description: "View your daily routes and delivery schedule.",
+    id: "SHP-001",
+    origin: "Warehouse A, New York, NY",
+    destination: "Client Hub, Boston, MA",
+    status: "In Transit",
   },
   {
-    title: "Vehicle Check",
-    icon: <Truck className="h-8 w-8 text-primary" />,
-    description: "Complete your pre-trip and post-trip vehicle inspections.",
-  },
-  {
-    title: "Track Deliveries",
-    icon: <PackageCheck className="h-8 w-8 text-primary" />,
-    description: "Update delivery status and view proof of delivery.",
+    id: "SHP-002",
+    origin: "Warehouse A, New York, NY",
+    destination: "Distribution Center, Philadelphia, PA",
+    status: "Out for Delivery",
   },
 ];
 
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case "In Transit":
+      return "default";
+    case "Out for Delivery":
+      return "secondary";
+    default:
+      return "outline";
+  }
+};
+
 export default function DriverDashboard() {
   return (
-    <div className="space-y-4">
-      {driverActions.map((action) => (
-        <Card key={action.title} className="hover:shadow-md transition-shadow duration-300 hover:bg-primary/5 cursor-pointer">
-          <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-            {action.icon}
-            <CardTitle className="font-headline text-lg">{action.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{action.description}</p>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Truck className="h-5 w-5"/> Active Shipments</h3>
+        <div className="space-y-4">
+          {activeShipments.map((shipment) => (
+            <Card key={shipment.id}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex justify-between items-center">
+                  <span>{shipment.id}</span>
+                  <Badge variant={getStatusVariant(shipment.status) as any}>{shipment.status}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-2">
+                 <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary/70"/> <strong>From:</strong> {shipment.origin}</p>
+                 <p className="flex items-center gap-2"><PackageCheck className="h-4 w-4 text-primary/70"/> <strong>To:</strong> {shipment.destination}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-headline flex items-center gap-2"><Map className="h-5 w-5"/> Route Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+           <p><strong>Current Route:</strong> NY-MA-90</p>
+           <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground"/> <strong>Next Stop ETA:</strong> 45 minutes</p>
+        </CardContent>
+      </Card>
+
+      <Button className="w-full" size="lg">
+        <ScanLine className="h-5 w-5 mr-2" />
+        Scan Package (QR)
+      </Button>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn } from 'lucide-react';
+import { Truck } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -49,10 +49,10 @@ export default function LoginPage() {
         <Card className="border-0">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-              <LogIn className="h-8 w-8 text-primary-foreground" />
+              <Truck className="h-8 w-8 text-primary-foreground" />
             </div>
-            <CardTitle className="font-headline text-3xl text-primary">RoleCall Mobile</CardTitle>
-            <CardDescription>Please sign in to your account</CardDescription>
+            <CardTitle className="font-headline text-3xl text-primary">Unbroken Logistics</CardTitle>
+            <CardDescription>Please sign in to continue</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
@@ -84,6 +84,11 @@ export default function LoginPage() {
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
+             <div className="mt-4 text-center text-sm">
+                <a href="#" className="underline text-muted-foreground hover:text-primary">
+                  Forgot Password?
+                </a>
+            </div>
           </CardContent>
         </Card>
       </div>

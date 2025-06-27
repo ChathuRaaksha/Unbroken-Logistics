@@ -4,7 +4,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'RoleCall Mobile',
+  title: 'Unbroken Logistics Tracker',
   description: 'Logistics management for every role.',
 };
 

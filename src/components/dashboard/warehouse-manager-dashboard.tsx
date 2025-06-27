@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutGrid, Users, BarChart3 } from "lucide-react";
+import { LayoutGrid, LineChart, AlertTriangle } from "lucide-react";
 
 const managerActions = [
   {
@@ -8,14 +8,14 @@ const managerActions = [
     description: "Monitor stock levels and manage inventory in real-time.",
   },
   {
-    title: "Team Schedule",
-    icon: <Users className="h-8 w-8 text-primary" />,
-    description: "View and manage shift schedules for all warehouse staff.",
+    title: "Shipment Progress",
+    icon: <LineChart className="h-8 w-8 text-primary" />,
+    description: "Shows the status of shipments in transit or pending.",
   },
   {
-    title: "Generate Reports",
-    icon: <BarChart3 className="h-8 w-8 text-primary" />,
-    description: "Create and view performance and operational reports.",
+    title: "Low Stock Alerts",
+    icon: <AlertTriangle className="h-8 w-8 text-primary" />,
+    description: "Notifications for low stock or missing packages.",
   },
 ];
 

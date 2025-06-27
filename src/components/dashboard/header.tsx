@@ -2,11 +2,17 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Wifi } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import React from "react";
 
 export default function DashboardHeader() {
   const { user, logout } = useAuth();
+  const [isOnline, setIsOnline] = React.useState(true); // Mock state for now
+
+  // In a real app, you'd use a service to check connectivity
+  // React.useEffect(() => { ... });
 
   const getInitials = (name: string) => {
     return name
@@ -17,7 +23,7 @@ export default function DashboardHeader() {
   };
 
   return (
-    <header className="flex items-center justify-between p-4 border-b bg-primary/5 rounded-t-2xl">
+    <header className="flex items-start justify-between p-4 border-b bg-primary/5 rounded-t-2xl">
       <div className="flex items-center gap-4">
         <Avatar>
             <AvatarImage src={`https://i.pravatar.cc/150?u=${user?.username}`} />
@@ -28,6 +34,10 @@ export default function DashboardHeader() {
                 Hello, {user?.username}!
             </h1>
             <p className="text-sm text-muted-foreground">Your role: <span className="font-bold">{user?.role}</span></p>
+             <Badge variant={isOnline ? "secondary" : "destructive"} className="mt-2 text-xs">
+                <Wifi className="h-3 w-3 mr-1" />
+                {isOnline ? "Online" : "Offline"}
+            </Badge>
         </div>
       </div>
       <Button variant="ghost" size="icon" onClick={logout} aria-label="Log out">
