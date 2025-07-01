@@ -15,6 +15,7 @@ export interface Shipment {
   shipment_id: string;
   status: string;
   timestamp: string;
+  [key: string]: any; // Allow other properties from the document
 }
 
 export interface FetchShipmentsResult {
@@ -56,17 +57,8 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
         const shipments: Shipment[] = json.rows
             .filter((row: any) => row.doc && row.doc.shipment_id) // Filter for documents that are shipments
             .map((row: any) => ({
-                     id: row.id || row.doc._id,
-                     destination: row.doc.destination,
-                     handler_role: row.doc.handler_role,
-                     handoff_point: row.doc.handoff_point,
-                     item_id: row.doc.item_id,
-                     origin: row.doc.origin,
-                     package_condition: row.doc.package_condition,
-                     rfid: row.doc.rfid,
-                     shipment_id: row.doc.shipment_id,
-                     status: row.doc.status,
-                     timestamp: row.doc.timestamp,
+                id: row.id, // Use the top-level row ID as the unique document ID
+                ...row.doc, // Spread all properties from the nested doc object
             }));
 
         console.log(`Successfully fetched ${shipments.length} live shipments.`);
@@ -74,6 +66,40 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
 
     } catch (error: any) {
         console.error("Failed to fetch live data, falling back to mock data.", error.message);
-    return { shipments: [], isOnline: false };
+        return { shipments: mockShipments, isOnline: false };
     }
+}
+
+
+/**
+ * MOCK FUNCTION: Simulates updating a shipment's status.
+ * @param shipmentId The ID of the shipment to update.
+ * @param newStatus The new status to set.
+ * @returns A promise that resolves to a success or failure object.
+ */
+export async function updateShipmentStatus(
+  shipmentId: string,
+  newStatus: string
+): Promise<{ success: boolean; message: string }> {
+  // This is a placeholder for a real API call.
+  console.log(`Simulating update for shipment ID ${shipmentId} to status "${newStatus}"`);
+  
+  // In a real application, you would make a PUT/PATCH request here to your database.
+  // For example:
+  // const API_URL = `https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/${shipmentId}`;
+  // const response = await fetch(API_URL, {
+  //   method: 'PATCH', // or 'PUT'
+  //   headers: { 
+  //     'Content-Type': 'application/json', 
+  //     'Authorization': `Basic ${basicAuth}`
+  //   },
+  //   body: JSON.stringify({ status: newStatus, _rev: 'current_rev' }) // Couchbase requires _rev for updates
+  // });
+  // if (!response.ok) {
+  //   return { success: false, message: 'Failed to update shipment status.' };
+  // }
+  
+  await new Promise(resolve => setTimeout(resolve, 750)); // Simulate network latency
+
+  return { success: true, message: 'Shipment status updated successfully!' };
 }

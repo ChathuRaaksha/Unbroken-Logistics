@@ -5,12 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Truck, PackageCheck, PackageX, PackageSearch, Clock, MapPin, Hash, Search } from "lucide-react";
-import { fetchAllShipments, Shipment, FetchShipmentsResult } from '@/services/logistics-api';
+import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipmentStatus } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 
 
 const DriverDashboard = () => {
@@ -23,7 +26,12 @@ const DriverDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editableStatus, setEditableStatus] = useState("");
+  
   const { setIsOnline } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadShipments = async () => {
@@ -82,6 +90,7 @@ const DriverDashboard = () => {
 
   const handleRowClick = (shipment: Shipment) => {
     setSelectedShipment(shipment);
+    setEditableStatus(shipment.status);
     setIsDialogOpen(true);
   };
   
@@ -90,6 +99,7 @@ const DriverDashboard = () => {
         case 'delivered': return 'default';
         case 'in_transit': return 'secondary';
         case 'delayed': return 'destructive';
+        case 'picked_up': return 'outline';
         default: return 'outline';
     }
   };
@@ -102,6 +112,31 @@ const DriverDashboard = () => {
           default: return <span>{condition || 'N/A'}</span>;
       }
   };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedShipment || !editableStatus || editableStatus === selectedShipment.status) return;
+
+    setIsUpdating(true);
+    const result = await updateShipmentStatus(selectedShipment.id, editableStatus);
+
+    if (result.success) {
+        setAllShipments(prevShipments =>
+            prevShipments.map(s =>
+                s.id === selectedShipment.id ? { ...s, status: editableStatus } : s
+            )
+        );
+        toast({ title: "Success", description: result.message });
+        setIsDialogOpen(false);
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: result.message,
+        });
+    }
+    setIsUpdating(false);
+  };
+
 
   if (loading) {
     return (
@@ -265,6 +300,30 @@ const DriverDashboard = () => {
                            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                               <span className="text-sm font-medium text-muted-foreground">Handoff Point</span>
                               <span>{selectedShipment.handoff_point || 'N/A'}</span>
+                          </div>
+                      </div>
+                      <Separator />
+                      <div className="space-y-4">
+                          <Label htmlFor="status-update" className="text-base font-semibold">Update Status</Label>
+                          <div className="flex gap-2">
+                            <Select value={editableStatus} onValueChange={setEditableStatus}>
+                                <SelectTrigger id="status-update">
+                                    <SelectValue placeholder="Select new status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="picked_up">Picked Up</SelectItem>
+                                    <SelectItem value="in_transit">In Transit</SelectItem>
+                                    <SelectItem value="delayed">Delayed</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Button
+                                onClick={handleUpdateStatus}
+                                disabled={isUpdating || editableStatus === selectedShipment.status}
+                                className="w-[120px]"
+                            >
+                                {isUpdating ? <Loader2 className="animate-spin" /> : 'Update'}
+                            </Button>
                           </div>
                       </div>
                   </>
