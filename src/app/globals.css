@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 275 100% 98%;
+    --background: 210 40% 98%;
     --foreground: 222 84% 5%;
     --card: 0 0% 100%;
     --card-foreground: 222 84% 5%;
@@ -42,7 +42,7 @@
   }
 
   .dark {
-    --background: 222 84% 5%;
+    --background: 210 40% 10%;
     --foreground: 210 40% 98%;
     --card: 222 84% 9%;
     --card-foreground: 210 40% 98%;
@@ -63,7 +63,7 @@
     --ring: 275 90% 65%;
 
     /* Sidebar Dark Variables */
-    --sidebar-background: 222 84% 9%;
+    --sidebar-background: 210 40% 10%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 275 90% 65%;
     --sidebar-primary-foreground: 275 85% 10%;
