@@ -14,7 +14,7 @@ export interface Shipment {
 
 const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
 const USERNAME = 'chaos_coder_01';
-const PASSWORD = 'Uk$7QkWq7U2yiHC';
+const PASSWORD = 'Uk$7QkWq7U2yiHCso';
 
 // Base64 encode the credentials for Basic Authentication.
 // NOTE: Storing credentials directly in code is not recommended for production.
@@ -33,6 +33,7 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
       // certificate is fully trusted. For development, direct API calls like this
       // often require more lenient security settings if certificates are self-signed.
       // Next.js fetch handles this reasonably well on the server.
+       cache: 'no-store', // Disable caching for this request
     });
 
     if (!response.ok) {

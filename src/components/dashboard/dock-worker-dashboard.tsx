@@ -21,7 +21,7 @@ const dockWorkerActions = [
 
 export default function DockWorkerDashboard() {
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {dockWorkerActions.map((action) => (
         <Card key={action.title} className="hover:shadow-md transition-shadow duration-300 hover:bg-primary/5 cursor-pointer">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">

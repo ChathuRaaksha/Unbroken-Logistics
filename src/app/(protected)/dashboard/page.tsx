@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from '@/hooks/use-auth';
-import DashboardHeader from '@/components/dashboard/header';
 import DriverDashboard from '@/components/dashboard/driver-dashboard';
 import DockWorkerDashboard from '@/components/dashboard/dock-worker-dashboard';
 import WarehouseManagerDashboard from '@/components/dashboard/warehouse-manager-dashboard';
@@ -24,13 +23,11 @@ export default function DashboardPage() {
     };
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-4">
-            <div className="w-full max-w-sm rounded-2xl bg-card shadow-2xl">
-                 <DashboardHeader />
-                <div className="p-6">
-                    {renderDashboardByRole()}
-                </div>
-            </div>
-        </main>
+        <div>
+            <p className="text-muted-foreground mb-6">
+                Welcome back, {user?.username}! Here's an overview based on your role as a {user?.role}.
+            </p>
+            {renderDashboardByRole()}
+        </div>
     );
 }

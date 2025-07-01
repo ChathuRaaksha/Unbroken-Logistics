@@ -32,10 +32,12 @@ const getStatusVariant = (status: string) => {
 
 export default function DriverDashboard() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Truck className="h-5 w-5"/> Active Shipments</h3>
-        <div className="space-y-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Card className="md:col-span-2 lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5"/> Active Shipments</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {activeShipments.map((shipment) => (
             <Card key={shipment.id}>
               <CardHeader className="pb-2">
@@ -50,23 +52,25 @@ export default function DriverDashboard() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-headline flex items-center gap-2"><Map className="h-5 w-5"/> Route Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-           <p><strong>Current Route:</strong> NY-MA-90</p>
-           <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground"/> <strong>Next Stop ETA:</strong> 45 minutes</p>
         </CardContent>
       </Card>
+      
+      <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-headline flex items-center gap-2"><Map className="h-5 w-5"/> Route Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+               <p><strong>Current Route:</strong> NY-MA-90</p>
+               <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground"/> <strong>Next Stop ETA:</strong> 45 minutes</p>
+            </CardContent>
+          </Card>
 
-      <Button className="w-full" size="lg">
-        <ScanLine className="h-5 w-5 mr-2" />
-        Scan Package (QR)
-      </Button>
+          <Button className="w-full" size="lg">
+            <ScanLine className="h-5 w-5 mr-2" />
+            Scan Package (QR)
+          </Button>
+      </div>
     </div>
   );
 }
