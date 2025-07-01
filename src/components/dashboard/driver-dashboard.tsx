@@ -117,7 +117,7 @@ const DriverDashboard = () => {
     if (!selectedShipment || !editableStatus || editableStatus === selectedShipment.status) return;
 
     setIsUpdating(true);
-    const result = await updateShipment(selectedShipment.id, { status: editableStatus });
+    const result = await updateShipment(selectedShipment, { status: editableStatus });
 
     if (result.success && result.updatedShipment) {
         setAllShipments(prevShipments =>
@@ -125,6 +125,7 @@ const DriverDashboard = () => {
                 s.id === selectedShipment.id ? result.updatedShipment! : s
             )
         );
+        setSelectedShipment(result.updatedShipment);
         toast({ title: "Success", description: result.message });
         setIsDialogOpen(false);
     } else {

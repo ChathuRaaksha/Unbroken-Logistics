@@ -1,6 +1,8 @@
 // Defines the structure of the 'logistics' object found in each document.
 export interface Shipment {
   id: string; // The document ID, used for React keys
+  _id: string;
+  _rev: string;
   destination: string;
   handler_role: string;
   handoff_point: string;
@@ -24,9 +26,6 @@ export interface FetchShipmentsResult {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    // NOTE: Using a CORS proxy for client-side development.
-    // In a production environment, you would typically have a backend service
-    // that communicates with the database to avoid CORS issues and secure credentials.
     const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
@@ -36,7 +35,7 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
             method: 'GET',
             headers: {
               'Authorization': `Basic ${basicAuth}`,
-              'x-requested-with': 'XMLHttpRequest' // Required by some CORS proxies
+              'x-requested-with': 'XMLHttpRequest'
             },
         });
 
@@ -54,7 +53,7 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
         const shipments: Shipment[] = json.rows
             .filter((row: any) => row.doc && row.doc.shipment_id && typeof row.doc.shipment_id === 'string')
             .map((row: any) => ({
-                id: row.id, // Use the document ID for the key
+                id: row.id,
                 ...row.doc,
             }));
 
@@ -63,32 +62,76 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
 
     } catch (error: any) {
         console.error("Failed to fetch live data.", error.message);
-        // Return empty array and offline status on failure.
-        // The UI components will handle displaying an error or empty state.
         return { shipments: [], isOnline: false };
     }
 }
 
 
 /**
- * Updates a shipment's details.
- * NOTE: This is a placeholder. A real implementation would require a secure backend endpoint
- * to communicate with the database.
- * @param shipmentId The ID of the shipment to update.
+ * Updates a shipment's details in the live database.
+ * @param shipment The current shipment object, which must include its _id and _rev.
  * @param updates An object containing the fields to update.
  * @returns A promise that resolves to a success or failure object.
  */
 export async function updateShipment(
-  shipmentId: string,
+  shipment: Shipment,
   updates: Partial<Omit<Shipment, 'id'>>
 ): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
-    console.log(`Attempted to update shipment ID ${shipmentId} with`, updates);
-    // This is a placeholder. In a real app, you would make a PUT/POST request
-    // to your backend, which would then update the database.
-    // For now, we'll return a failure message to indicate it's not implemented.
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
-    return { 
-        success: false, 
-        message: 'Live database updates are not implemented in this prototype.' 
+    const API_URL_BASE = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
+    const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
+
+    if (!shipment?._rev) {
+        return {
+            success: false,
+            message: 'Cannot update document without a revision number. Please refresh and try again.',
+        };
+    }
+
+    // Prepare the document for update.
+    // Start with the original document, spread the updates, and ensure the _rev is correct.
+    const { id, ...doc } = shipment;
+    const updatedDoc = {
+        ...doc,
+        ...updates
     };
+
+    try {
+        console.log(`Attempting to update shipment ID ${shipment.id} with`, updates);
+        const response = await fetch(`${API_URL_BASE}${shipment.id}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Basic ${basicAuth}`,
+                'Content-Type': 'application/json',
+                'x-requested-with': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(updatedDoc),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.reason || `API call failed with status ${response.status}`);
+        }
+
+        // Return the successfully updated document, with its new revision number.
+        const returnedShipment: Shipment = {
+            ...updatedDoc,
+            id: result.id,
+            _id: result.id,
+            _rev: result.rev,
+        };
+        
+        return {
+            success: true,
+            message: 'Shipment updated successfully!',
+            updatedShipment: returnedShipment,
+        };
+
+    } catch (error: any) {
+        console.error('Failed to update shipment:', error.message);
+        return {
+            success: false,
+            message: error.message || 'An unexpected error occurred while updating the shipment.',
+        };
+    }
 }

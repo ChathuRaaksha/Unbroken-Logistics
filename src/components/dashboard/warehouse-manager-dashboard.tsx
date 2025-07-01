@@ -137,9 +137,9 @@ export default function WarehouseStaffDashboard() {
     };
 
     const handleSaveChanges = async () => {
-        if (!selectedShipment) return;
+        if (!selectedShipment || !hasChanges) return;
         setIsUpdating(true);
-        const result = await updateShipment(selectedShipment.id, editableData);
+        const result = await updateShipment(selectedShipment, editableData);
         if (result.success && result.updatedShipment) {
             setAllShipments(prev => prev.map(s => s.id === result.updatedShipment!.id ? result.updatedShipment! : s));
             toast({ title: 'Success', description: 'Shipment updated successfully.' });
