@@ -35,7 +35,8 @@ type PendingUpdate = {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
+    const targetUrl = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
+    const API_URL = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -44,7 +45,6 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
             method: 'GET',
             headers: {
               'Authorization': `Basic ${basicAuth}`,
-              'x-requested-with': 'XMLHttpRequest'
             },
         });
 
@@ -118,7 +118,7 @@ export async function updateShipment(
 
 // The actual API call to update a document
 async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<Shipment, 'id'>>) {
-    const API_URL_BASE = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
+    const API_URL_BASE = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     if (!shipment?._rev) {
@@ -128,13 +128,15 @@ async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<S
     const { id, ...doc } = shipment;
     const updatedDoc = { ...doc, ...updates, timestamp: new Date().toISOString() };
 
+    const fullUrl = `${API_URL_BASE}${shipment.id}`;
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(fullUrl);
+
     try {
-        const response = await fetch(`${API_URL_BASE}${shipment.id}`, {
+        const response = await fetch(proxyUrl, {
             method: 'PUT',
             headers: {
                 'Authorization': `Basic ${basicAuth}`,
                 'Content-Type': 'application/json',
-                'x-requested-with': 'XMLHttpRequest'
             },
             body: JSON.stringify(updatedDoc),
         });
