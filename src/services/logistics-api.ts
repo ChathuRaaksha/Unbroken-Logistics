@@ -74,6 +74,6 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
 
     } catch (error: any) {
         console.error("Failed to fetch live data, falling back to mock data.", error.message);
-        return { shipments: mockShipments, isOnline: false };
+    return { shipments: [], isOnline: false };
     }
 }

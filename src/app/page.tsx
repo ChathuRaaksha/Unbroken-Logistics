@@ -67,7 +67,7 @@ export default function LoginPage() {
                 <Input
                   id="username"
                   type="text"
-                  placeholder="e.g., driver01"
+                  placeholder="e.g., driver_01"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -98,9 +98,9 @@ export default function LoginPage() {
                 <AccordionContent>
                   <div className="text-sm text-muted-foreground space-y-2 pt-4 mt-2 border-t">
                     <p className="font-semibold text-foreground">Log in with one of the following:</p>
-                    <p>• <strong>Driver:</strong> driver01 / pass123</p>
-                    <p>• <strong>Dock Worker:</strong> dock01 / pass123</p>
-                    <p>• <strong>Warehouse Manager:</strong> manager01 / pass123</p>
+                    <p>• <strong>Driver:</strong> driver_01 / pass123</p>
+                    <p>• <strong>Dock Worker:</strong> dock_01 / pass123</p>
+                    <p>• <strong>Warehouse Manager:</strong> manager_01 / pass123</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>

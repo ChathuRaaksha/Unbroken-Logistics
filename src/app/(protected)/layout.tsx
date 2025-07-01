@@ -58,7 +58,7 @@ export default function ProtectedLayout({
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Truck className="h-6 w-6 text-primary" />
-            <span className="font-headline">RoleCall Mobile</span>
+            <span className="font-headline">Unbroken Logistics</span>
           </Link>
         </nav>
         <div className="flex items-center gap-4">
