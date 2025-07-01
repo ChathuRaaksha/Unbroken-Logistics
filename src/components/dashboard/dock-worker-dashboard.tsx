@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Package, Search } from "lucide-react";
-import { fetchAllShipments, Shipment } from '@/services/logistics-api';
+import { fetchAllShipments, Shipment, FetchShipmentsResult } from '@/services/logistics-api';
+import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,25 +18,28 @@ const DockWorkerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const { setIsOnline } = useAuth();
 
   useEffect(() => {
     const loadShipments = async () => {
       setLoading(true);
       setError(null);
       try {
-        const shipments = await fetchAllShipments();
+        const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
         const dockWorkerShipments = shipments.filter(s => s.handler_role === 'dock_worker');
         setAllShipments(dockWorkerShipments);
+        setIsOnline(isOnline);
       } catch (err: any) {
-        console.error("Error fetching dock worker data:", err);
-        setError(`Failed to fetch shipment data: ${err.message}`);
+        console.error("Error processing dock worker data:", err);
+        setError(`Failed to process shipment data: ${err.message}`);
+        setIsOnline(false);
       } finally {
         setLoading(false);
       }
     };
 
     loadShipments();
-  }, []);
+  }, [setIsOnline]);
 
   const filteredShipments = useMemo(() => {
     if (!searchTerm) return allShipments;

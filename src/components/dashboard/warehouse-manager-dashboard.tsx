@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon } from "lucide-react";
-import { fetchAllShipments, Shipment } from '@/services/logistics-api';
+import { fetchAllShipments, Shipment, FetchShipmentsResult } from '@/services/logistics-api';
+import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
 
@@ -25,6 +26,7 @@ export default function WarehouseManagerDashboard() {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const { setIsOnline } = useAuth();
 
 
     useEffect(() => {
@@ -32,18 +34,20 @@ export default function WarehouseManagerDashboard() {
             setIsLoading(true);
             setError(null);
             try {
-                const shipments = await fetchAllShipments();
+                const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
                 setAllShipments(shipments);
                 setFilteredShipments(shipments);
+                setIsOnline(isOnline);
             } catch (e: any) {
-                setError(e.message || 'Failed to load shipment data. Please check the connection and try again.');
+                setError(e.message || 'Failed to process shipment data. Please try again.');
                 console.error(e);
+                setIsOnline(false);
             } finally {
                 setIsLoading(false);
             }
         };
         loadShipments();
-    }, []);
+    }, [setIsOnline]);
     
     const uniqueStatuses = useMemo(() => {
         const statuses = new Set(allShipments.map(s => s.status));

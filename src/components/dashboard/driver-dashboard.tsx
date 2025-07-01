@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Truck, PackageCheck, PackageX, PackageSearch, Clock, MapPin, Hash, Search } from "lucide-react";
-import { fetchAllShipments, Shipment } from '@/services/logistics-api';
+import { fetchAllShipments, Shipment, FetchShipmentsResult } from '@/services/logistics-api';
+import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,25 +23,28 @@ const DriverDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const { setIsOnline } = useAuth();
 
   useEffect(() => {
     const loadShipments = async () => {
       setLoading(true);
       setError(null);
       try {
-        const shipments = await fetchAllShipments();
+        const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
         const driverShipments = shipments.filter(s => s.handler_role === 'driver');
         setAllShipments(driverShipments);
+        setIsOnline(isOnline);
       } catch (err: any) {
-        console.error("Error fetching driver data:", err);
-        setError(`Failed to fetch shipment data: ${err.message}`);
+        console.error("Error processing driver data:", err);
+        setError(`Failed to process shipment data: ${err.message}`);
+        setIsOnline(false);
       } finally {
         setLoading(false);
       }
     };
 
     loadShipments();
-  }, []);
+  }, [setIsOnline]);
   
   const filteredShipments = useMemo(() => {
     if (!searchTerm) return allShipments;

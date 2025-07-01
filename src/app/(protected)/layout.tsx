@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Truck } from 'lucide-react';
+import { LogOut, Truck, Wifi, WifiOff } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
 export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, logout, isOnline } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -57,10 +58,14 @@ export default function ProtectedLayout({
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Truck className="h-6 w-6 text-primary" />
-            <span className="font-headline">Unbroken</span>
+            <span className="font-headline">RoleCall Mobile</span>
           </Link>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+            <Badge variant={isOnline ? 'secondary' : 'destructive'} className="flex items-center gap-1.5 whitespace-nowrap">
+              {isOnline ? <Wifi className="h-4 w-4"/> : <WifiOff className="h-4 w-4"/>}
+              {isOnline ? "Online" : "Offline"}
+            </Badge>
             <div className="flex flex-col text-sm text-right overflow-hidden">
               <span className="font-semibold truncate">{user.username}</span>
               <span className="text-xs text-muted-foreground truncate">{user.role}</span>
