@@ -34,6 +34,7 @@ export default function WarehouseManagerDashboard() {
             try {
                 const shipments = await fetchAllShipments();
                 setAllShipments(shipments);
+                setFilteredShipments(shipments);
             } catch (e: any) {
                 setError(e.message || 'Failed to load shipment data. Please check the connection and try again.');
                 console.error(e);
@@ -53,12 +54,10 @@ export default function WarehouseManagerDashboard() {
     useEffect(() => {
         let results = allShipments;
         
-        // Filter by status
         if (statusFilter !== 'all') {
             results = results.filter(s => s.status === statusFilter);
         }
 
-        // Filter by search term
         if (searchTerm.trim()) {
             const lowercasedTerm = searchTerm.toLowerCase();
             results = results.filter(shipment => {
@@ -202,7 +201,7 @@ export default function WarehouseManagerDashboard() {
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="count" radius={4}>
                                     {chartData.map((entry) => (
-                                        <Cell key={`cell-${entry.status}`} fill={chartConfig[entry.status]?.color || "hsl(var(--chart-1))"} />
+                                        <Cell key={`cell-${entry.status}`} fill={chartConfig[entry.status as keyof typeof chartConfig]?.color || "hsl(var(--chart-1))"} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -274,7 +273,7 @@ export default function WarehouseManagerDashboard() {
                         <>
                          <div className="w-full overflow-auto border rounded-md">
                             <Table>
-                                <TableHeader className="sticky top-0 bg-card z-10">
+                                <TableHeader>
                                     <TableRow>
                                         <TableHead>Shipment ID</TableHead>
                                         <TableHead>Origin</TableHead>
