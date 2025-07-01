@@ -1,29 +1,36 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, Truck, PackageCheck, PackageX, PackageSearch, Clock, MapPin, Hash } from "lucide-react";
+import { Loader2, Truck, PackageCheck, PackageX, PackageSearch, Clock, MapPin, Hash, Search } from "lucide-react";
 import { fetchAllShipments, Shipment } from '@/services/logistics-api';
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const DriverDashboard = () => {
-  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [allShipments, setAllShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     const loadShipments = async () => {
       setLoading(true);
       setError(null);
       try {
-        const allShipments = await fetchAllShipments();
-        // Filter for shipments handled by a driver
-        const driverShipments = allShipments.filter(s => s.handler_role === 'driver');
-        setShipments(driverShipments);
+        const shipments = await fetchAllShipments();
+        const driverShipments = shipments.filter(s => s.handler_role === 'driver');
+        setAllShipments(driverShipments);
       } catch (err: any) {
         console.error("Error fetching driver data:", err);
         setError(`Failed to fetch shipment data: ${err.message}`);
@@ -34,6 +41,40 @@ const DriverDashboard = () => {
 
     loadShipments();
   }, []);
+  
+  const filteredShipments = useMemo(() => {
+    if (!searchTerm) return allShipments;
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return allShipments.filter(s =>
+      s.shipment_id.toLowerCase().includes(lowercasedTerm) ||
+      s.origin.toLowerCase().includes(lowercasedTerm) ||
+      s.destination.toLowerCase().includes(lowercasedTerm)
+    );
+  }, [allShipments, searchTerm]);
+
+  const paginatedShipments = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return filteredShipments.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredShipments, currentPage, rowsPerPage]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handleRowsPerPageChange = (value: string) => {
+    setRowsPerPage(Number(value));
+    setCurrentPage(1);
+  };
 
   const handleRowClick = (shipment: Shipment) => {
     setSelectedShipment(shipment);
@@ -88,7 +129,21 @@ const DriverDashboard = () => {
             <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5"/> Active Shipments</CardTitle>
           </CardHeader>
           <CardContent>
-              <div className="w-full overflow-auto border rounded-md max-h-96">
+              <div className="flex items-center py-4">
+                <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by ID, origin, destination..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="pl-10 w-full md:w-1/2 lg:w-1/3"
+                    />
+                </div>
+              </div>
+              <div className="w-full overflow-auto border rounded-md">
                   <Table>
                       <TableHeader>
                       <TableRow>
@@ -101,8 +156,8 @@ const DriverDashboard = () => {
                       </TableRow>
                       </TableHeader>
                       <TableBody>
-                      {shipments.length > 0 ? (
-                          shipments.map((shipment) => (
+                      {paginatedShipments.length > 0 ? (
+                          paginatedShipments.map((shipment) => (
                               <TableRow key={shipment.id} onClick={() => handleRowClick(shipment)} className="cursor-pointer">
                                   <TableCell className="font-medium">{shipment.shipment_id}</TableCell>
                                   <TableCell><Badge variant={getStatusVariant(shipment.status)}>{shipment.status.replace(/_/g, ' ')}</Badge></TableCell>
@@ -115,13 +170,52 @@ const DriverDashboard = () => {
                       ) : (
                           <TableRow>
                               <TableCell colSpan={6} className="text-center h-24">
-                                  No active shipments assigned to you.
+                                  No active shipments found.
                               </TableCell>
                           </TableRow>
                       )}
                       </TableBody>
                   </Table>
               </div>
+              <div className="flex items-center justify-end space-x-2 py-4">
+                <div className="flex-1 text-sm text-muted-foreground">
+                    {filteredShipments.length} shipment(s) found.
+                </div>
+                <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">Rows per page</span>
+                    <Select value={`${rowsPerPage}`} onValueChange={handleRowsPerPageChange}>
+                        <SelectTrigger className="w-[75px]">
+                            <SelectValue placeholder={rowsPerPage} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex items-center justify-end space-x-2">
+                     <span className="text-sm text-muted-foreground">
+                        Page {totalPages > 0 ? currentPage : 0} of {totalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                        Next
+                    </Button>
+                </div>
+            </div>
           </CardContent>
         </Card>
       </div>

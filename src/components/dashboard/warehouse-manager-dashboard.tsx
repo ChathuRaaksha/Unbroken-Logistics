@@ -21,6 +21,11 @@ export default function WarehouseManagerDashboard() {
     
     const [searchType, setSearchType] = useState('shipment_id');
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
 
     useEffect(() => {
         const loadShipments = async () => {
@@ -29,7 +34,6 @@ export default function WarehouseManagerDashboard() {
             try {
                 const shipments = await fetchAllShipments();
                 setAllShipments(shipments);
-                setFilteredShipments(shipments);
             } catch (e: any) {
                 setError(e.message || 'Failed to load shipment data. Please check the connection and try again.');
                 console.error(e);
@@ -39,6 +43,43 @@ export default function WarehouseManagerDashboard() {
         };
         loadShipments();
     }, []);
+    
+    const uniqueStatuses = useMemo(() => {
+        const statuses = new Set(allShipments.map(s => s.status));
+        return Array.from(statuses);
+    }, [allShipments]);
+
+
+    useEffect(() => {
+        let results = allShipments;
+        
+        // Filter by status
+        if (statusFilter !== 'all') {
+            results = results.filter(s => s.status === statusFilter);
+        }
+
+        // Filter by search term
+        if (searchTerm.trim()) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            results = results.filter(shipment => {
+                const valueToSearch = shipment[searchType as keyof Shipment] as string | undefined;
+                return valueToSearch?.toLowerCase().includes(lowercasedTerm);
+            });
+        }
+        
+        setFilteredShipments(results);
+        setCurrentPage(1);
+
+    }, [searchTerm, searchType, statusFilter, allShipments]);
+
+
+    const paginatedShipments = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        return filteredShipments.slice(startIndex, startIndex + rowsPerPage);
+    }, [filteredShipments, currentPage, rowsPerPage]);
+
+    const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
+
 
     const stats = useMemo(() => {
         return {
@@ -63,35 +104,38 @@ export default function WarehouseManagerDashboard() {
       count: {
         label: "Shipments",
       },
-    };
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchTerm.trim()) {
-            setFilteredShipments(allShipments);
-            return;
-        }
-
-        const lowercasedTerm = searchTerm.toLowerCase();
-        const results = allShipments.filter(shipment => {
-            const valueToSearch = shipment[searchType as keyof Shipment] as string | undefined;
-            return valueToSearch?.toLowerCase().includes(lowercasedTerm);
-        });
-        setFilteredShipments(results);
+      in_transit: {
+        color: "hsl(var(--chart-1))",
+      },
+      delivered: {
+        color: "hsl(var(--chart-2))",
+      },
+      delayed: {
+        color: "hsl(var(--chart-3))",
+      },
+      picked_up: {
+          color: "hsl(var(--chart-4))",
+      },
+       unknown: {
+          color: "hsl(var(--chart-5))",
+      },
     };
     
-    const uniqueStatuses = useMemo(() => {
-        const statuses = new Set(allShipments.map(s => s.status));
-        return Array.from(statuses);
-    }, [allShipments]);
-
-    const handleStatusFilter = (status: string) => {
-        if (!status || status === 'all') {
-             setFilteredShipments(allShipments);
-        } else {
-            const results = allShipments.filter(s => s.status === status);
-            setFilteredShipments(results);
+    const handlePreviousPage = () => {
+        if (currentPage > 1) {
+          setCurrentPage(currentPage - 1);
         }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+          setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handleRowsPerPageChange = (value: string) => {
+        setRowsPerPage(Number(value));
+        setCurrentPage(1);
     };
 
     return (
@@ -157,8 +201,8 @@ export default function WarehouseManagerDashboard() {
                                 <YAxis allowDecimals={false} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="count" radius={4}>
-                                    {chartData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+                                    {chartData.map((entry) => (
+                                        <Cell key={`cell-${entry.status}`} fill={chartConfig[entry.status]?.color || "hsl(var(--chart-1))"} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -177,39 +221,43 @@ export default function WarehouseManagerDashboard() {
                     <CardDescription>Search for shipments by ID, RFID, or filter by status.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 mb-4">
-                        <Select value={searchType} onValuechange={(value) => setSearchType(value)}>
-                            <SelectTrigger className="w-full sm:w-[150px]">
-                                <SelectValue placeholder="Search by..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="shipment_id">Shipment ID</SelectItem>
-                                <SelectItem value="rfid">RFID</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {searchType === 'status' ? (
-                             <Select onValueChange={handleStatusFilter}>
-                                <SelectTrigger className="flex-1">
-                                    <SelectValue placeholder="Select a status" />
+                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                        <div className="flex-1 flex gap-2">
+                           <Select value={searchType} onValueChange={(value) => {
+                                setSearchType(value);
+                                setSearchTerm('');
+                            }}>
+                                <SelectTrigger className="w-full sm:w-[150px]">
+                                    <SelectValue placeholder="Search by..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    {uniqueStatuses.map(status => (
-                                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                                    ))}
+                                    <SelectItem value="shipment_id">Shipment ID</SelectItem>
+                                    <SelectItem value="rfid">RFID</SelectItem>
                                 </SelectContent>
                             </Select>
-                        ) : (
-                            <Input
-                                type="text"
-                                placeholder={`Enter ${searchType === 'rfid' ? 'RFID' : 'Shipment ID'}`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="flex-1"
-                            />
-                        )}
-                        {searchType !== 'status' && <Button type="submit" disabled={isLoading}>Search</Button>}
-                    </form>
+                            <div className="relative w-full">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder={`Search by ${searchType === 'rfid' ? 'RFID' : 'Shipment ID'}...`}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 w-full"
+                                />
+                            </div>
+                        </div>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                                <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                {uniqueStatuses.map(status => (
+                                    <SelectItem key={status} value={status}>{status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     
                     {isLoading ? (
                         <div className="flex justify-center items-center h-40">
@@ -223,7 +271,8 @@ export default function WarehouseManagerDashboard() {
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     ) : (
-                         <div className="w-full overflow-auto border rounded-md max-h-96">
+                        <>
+                         <div className="w-full overflow-auto border rounded-md">
                             <Table>
                                 <TableHeader className="sticky top-0 bg-card z-10">
                                     <TableRow>
@@ -235,8 +284,8 @@ export default function WarehouseManagerDashboard() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredShipments.length > 0 ? (
-                                        filteredShipments.map((shipment) => (
+                                    {paginatedShipments.length > 0 ? (
+                                        paginatedShipments.map((shipment) => (
                                             <TableRow key={shipment.id}>
                                                 <TableCell className="font-medium">{shipment.shipment_id}</TableCell>
                                                 <TableCell>{shipment.origin}</TableCell>
@@ -255,6 +304,46 @@ export default function WarehouseManagerDashboard() {
                                 </TableBody>
                             </Table>
                          </div>
+                        <div className="flex items-center justify-end space-x-2 py-4">
+                            <div className="flex-1 text-sm text-muted-foreground">
+                                {filteredShipments.length} shipment(s) found.
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <span className="text-sm text-muted-foreground">Rows per page</span>
+                                <Select value={`${rowsPerPage}`} onValueChange={handleRowsPerPageChange}>
+                                    <SelectTrigger className="w-[75px]">
+                                        <SelectValue placeholder={rowsPerPage} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="10">10</SelectItem>
+                                        <SelectItem value="20">20</SelectItem>
+                                        <SelectItem value="100">100</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-center justify-end space-x-2">
+                                 <span className="text-sm text-muted-foreground">
+                                    Page {totalPages > 0 ? currentPage : 0} of {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handlePreviousPage}
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleNextPage}
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                      </>
                     )}
                 </CardContent>
             </Card>
