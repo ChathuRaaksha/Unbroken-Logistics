@@ -35,8 +35,7 @@ type PendingUpdate = {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const targetUrl = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
-    const API_URL = 'https://thingproxy.freeboard.io/fetch/' + targetUrl;
+    const API_URL = '/api/couchbase/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -118,7 +117,7 @@ export async function updateShipment(
 
 // The actual API call to update a document
 async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<Shipment, 'id'>>) {
-    const API_URL_BASE = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
+    const API_URL_BASE = '/api/couchbase/unbroken-ep.scp.logistics/';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     if (!shipment?._rev) {
@@ -129,10 +128,9 @@ async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<S
     const updatedDoc = { ...doc, ...updates, timestamp: new Date().toISOString() };
 
     const fullUrl = `${API_URL_BASE}${shipment.id}`;
-    const proxyUrl = 'https://thingproxy.freeboard.io/fetch/' + fullUrl;
 
     try {
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(fullUrl, {
             method: 'PUT',
             headers: {
                 'Authorization': `Basic ${basicAuth}`,

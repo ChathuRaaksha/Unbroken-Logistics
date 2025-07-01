@@ -1,6 +1,14 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/couchbase/:path*',
+        destination: 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/:path*',
+      },
+    ]
+  },
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
