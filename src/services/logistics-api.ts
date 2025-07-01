@@ -1,5 +1,3 @@
-import { mockShipments } from './mock-data';
-
 // Defines the structure of the 'logistics' object found in each document.
 export interface Shipment {
   id: string; // The document ID, used for React keys
@@ -21,41 +19,19 @@ export interface FetchShipmentsResult {
     isOnline: boolean;
 }
 
-const MOCK_DATA_KEY = 'unbroken_logistics_mock_data';
-
-// Helper to get mock data, preferring localStorage
-const getMockData = (): Shipment[] => {
-    // This function will only be called on the client, so window is available
-    if (typeof window !== 'undefined') {
-        const storedData = localStorage.getItem(MOCK_DATA_KEY);
-        if (storedData) {
-            try {
-                return JSON.parse(storedData);
-            } catch (e) {
-                console.error("Failed to parse mock data from localStorage", e);
-                // If parsing fails, fall back to default and reset localStorage
-            }
-        }
-        // If no stored data, initialize it
-        localStorage.setItem(MOCK_DATA_KEY, JSON.stringify(mockShipments));
-    }
-    return mockShipments;
-};
-
-
 /**
- * Fetches all shipment documents.
- * Attempts to fetch from the live API first, then falls back to mock data on failure.
+ * Fetches all shipment documents from the live API.
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const PROXY_URL = 'https://proxy.cors.sh/';
-    const TARGET_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
-    const API_URL = `${PROXY_URL}${TARGET_URL}`;
+    // NOTE: Using a CORS proxy for client-side development.
+    // In a production environment, you would typically have a backend service
+    // that communicates with the database to avoid CORS issues and secure credentials.
+    const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
-        console.log("Attempting to fetch live data from API via proxy...");
+        console.log("Attempting to fetch live data from API...");
         const response = await fetch(API_URL, {
             method: 'GET',
             headers: {
@@ -76,61 +52,43 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
         }
 
         const shipments: Shipment[] = json.rows
-            .filter((row: any) => row.doc && row.doc.shipment_id)
+            .filter((row: any) => row.doc && row.doc.shipment_id && typeof row.doc.shipment_id === 'string')
             .map((row: any) => ({
-                id: row.id,
+                id: row.id, // Use the document ID for the key
                 ...row.doc,
             }));
 
         console.log(`Successfully fetched ${shipments.length} live shipments.`);
-        // Sync API data with localStorage for consistent updates
-        localStorage.setItem(MOCK_DATA_KEY, JSON.stringify(shipments));
         return { shipments, isOnline: true };
 
     } catch (error: any) {
-        console.error("Failed to fetch live data, falling back to mock data.", error.message);
-        const shipments = getMockData();
-        return { shipments, isOnline: false };
+        console.error("Failed to fetch live data.", error.message);
+        // Return empty array and offline status on failure.
+        // The UI components will handle displaying an error or empty state.
+        return { shipments: [], isOnline: false };
     }
 }
 
 
 /**
- * MOCK FUNCTION: Simulates updating a shipment's details and persists it to localStorage.
+ * Updates a shipment's details.
+ * NOTE: This is a placeholder. A real implementation would require a secure backend endpoint
+ * to communicate with the database.
  * @param shipmentId The ID of the shipment to update.
  * @param updates An object containing the fields to update.
- * @returns A promise that resolves to a success or failure object, including the updated shipment.
+ * @returns A promise that resolves to a success or failure object.
  */
 export async function updateShipment(
   shipmentId: string,
   updates: Partial<Omit<Shipment, 'id'>>
 ): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
-  console.log(`Updating shipment ID ${shipmentId} with`, updates);
-  
-  try {
-    const currentShipments = getMockData();
-    const shipmentIndex = currentShipments.findIndex(s => s.id === shipmentId);
-
-    if (shipmentIndex === -1) {
-        throw new Error("Shipment not found in mock data.");
-    }
-
-    // Update the shipment
-    const updatedShipment = {
-        ...currentShipments[shipmentIndex],
-        ...updates,
-        timestamp: new Date().toISOString(), // Always update timestamp on any change
-    };
-    currentShipments[shipmentIndex] = updatedShipment;
-
-    // Save back to localStorage
-    localStorage.setItem(MOCK_DATA_KEY, JSON.stringify(currentShipments));
-
+    console.log(`Attempted to update shipment ID ${shipmentId} with`, updates);
+    // This is a placeholder. In a real app, you would make a PUT/POST request
+    // to your backend, which would then update the database.
+    // For now, we'll return a failure message to indicate it's not implemented.
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
-
-    return { success: true, message: 'Shipment updated successfully!', updatedShipment };
-  } catch (error: any) {
-     console.error("Failed to update mock data in localStorage", error);
-     return { success: false, message: `Failed to update status: ${error.message}` };
-  }
+    return { 
+        success: false, 
+        message: 'Live database updates are not implemented in this prototype.' 
+    };
 }
