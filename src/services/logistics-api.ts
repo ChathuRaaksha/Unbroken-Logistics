@@ -54,10 +54,19 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
 
         // Correctly parse the Couchbase response structure
         const shipments: Shipment[] = json.rows
-            .filter((row: any) => row.doc && row.doc.logistics && typeof row.doc.logistics === 'object')
+            .filter((row: any) => row.doc && row.doc.shipment_id) // Filter for documents that are shipments
             .map((row: any) => ({
-                id: row.id, // Use the document ID from Couchbase as the unique key
-                ...row.doc.logistics,
+                     id: row.id || row.doc._id,
+                     destination: row.doc.destination,
+                     handler_role: row.doc.handler_role,
+                     handoff_point: row.doc.handoff_point,
+                     item_id: row.doc.item_id,
+                     origin: row.doc.origin,
+                     package_condition: row.doc.package_condition,
+                     rfid: row.doc.rfid,
+                     shipment_id: row.doc.shipment_id,
+                     status: row.doc.status,
+                     timestamp: row.doc.timestamp,
             }));
 
         console.log(`Successfully fetched ${shipments.length} live shipments.`);
