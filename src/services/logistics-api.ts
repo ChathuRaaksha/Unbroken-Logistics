@@ -35,10 +35,12 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
       headers: {
         'Authorization': `Basic ${basicAuth}`,
       },
-       cache: 'no-store', // Ensures fresh data on every request
+       // This prevents caching of failed responses and ensures fresh data.
+       cache: 'no-store',
     });
 
     if (!response.ok) {
+       // If the server responded with an error, log the details for debugging.
        const errorBody = await response.text();
        console.error(`API Error: ${response.status}`, errorBody);
        throw new Error(`API request failed with status ${response.status}`);
@@ -47,6 +49,7 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
     const data = await response.json();
     
     if (!data.rows || !Array.isArray(data.rows)) {
+      console.error('Invalid data structure from API:', data);
       throw new Error('Invalid data structure from API: "rows" array is missing.');
     }
 
