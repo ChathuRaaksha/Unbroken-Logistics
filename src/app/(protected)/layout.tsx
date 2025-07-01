@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Truck, Wifi, WifiOff, CloudSync } from 'lucide-react';
+import { LogOut, Truck, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,7 +26,10 @@ export default function ProtectedLayout({
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    setPendingCount(getPendingUpdateCount());
+    // This check ensures localStorage is only accessed on the client side.
+    if (typeof window !== 'undefined') {
+        setPendingCount(getPendingUpdateCount());
+    }
     
     const handleSync = async () => {
       setIsSyncing(true);
@@ -52,7 +55,7 @@ export default function ProtectedLayout({
     window.addEventListener('online', handleOnline);
 
     // Initial sync check on load
-    if (navigator.onLine && getPendingUpdateCount() > 0) {
+    if (typeof window !== "undefined" && navigator.onLine && getPendingUpdateCount() > 0) {
       handleSync();
     }
     
@@ -107,7 +110,7 @@ export default function ProtectedLayout({
         <div className="flex items-center gap-4">
             {pendingCount > 0 && (
                 <Badge variant="outline" className="flex items-center gap-1.5 whitespace-nowrap">
-                    <CloudSync className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                     {pendingCount} Pending
                 </Badge>
             )}
@@ -135,4 +138,3 @@ export default function ProtectedLayout({
     </div>
   );
 }
-
