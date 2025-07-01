@@ -1,4 +1,3 @@
-
 'use server';
 
 import { mockShipments } from './mock-data';
@@ -29,20 +28,18 @@ export interface FetchShipmentsResult {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    // Removed the cors-anywhere proxy and added include_docs=true to get full document data
-    const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?limit=500&include_docs=true';
+    // Direct API URL without the CORS proxy
+    const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
-        console.log("Attempting to fetch live data directly from API...");
+        console.log("Attempting to fetch live data from API...");
         const response = await fetch(API_URL, {
             method: 'GET',
             headers: {
               'Authorization': `Basic ${basicAuth}`,
-              // Server-to-server requests don't have CORS issues, so Origin/X-Requested-With are not needed.
             },
-            cache: 'no-store', // Disable caching to ensure fresh data
-          });
+        });
 
         if (!response.ok) {
             const errorBody = await response.text();
@@ -57,7 +54,7 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
 
         // Correctly parse the Couchbase response structure
         const shipments: Shipment[] = json.rows
-            .filter((row: any) => row.doc && row.doc.logistics) // Ensure the document and logistics data exist
+            .filter((row: any) => row.doc && row.doc.logistics && typeof row.doc.logistics === 'object')
             .map((row: any) => ({
                 id: row.id, // Use the document ID from Couchbase as the unique key
                 ...row.doc.logistics,
