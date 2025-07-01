@@ -27,7 +27,7 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
   const PASSWORD = 'Uk$7QkWq7U2yiHCso';
 
   const basicAuth = Buffer.from(`${USERNAME}:${PASSWORD}`).toString('base64');
-
+console.warn("basicAuth", basicAuth)
   try {
     const response = await fetch(API_URL, {
       method: 'GET',
@@ -44,6 +44,7 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
     }
 
     const data = await response.json();
+    console.log("data in logistics", data);
     
     if (!data.rows || !Array.isArray(data.rows)) {
       console.error('Invalid data structure from API:', data);
