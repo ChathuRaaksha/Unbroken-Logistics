@@ -30,7 +30,7 @@ export default function WarehouseStaffDashboard() {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const { setIsOnline } = useAuth();
+    const { setIsOnline, lastSyncTime } = useAuth();
     const { toast } = useToast();
 
     // State for the edit dialog
@@ -62,7 +62,7 @@ export default function WarehouseStaffDashboard() {
 
     useEffect(() => {
         loadShipments();
-    }, [loadShipments]);
+    }, [loadShipments, lastSyncTime]);
 
     useEffect(() => {
         let results = allShipments;

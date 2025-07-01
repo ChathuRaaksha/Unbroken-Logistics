@@ -12,6 +12,8 @@ export type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   isOnline: boolean;
+  lastSyncTime: number | null;
+  setLastSyncTime: (time: number) => void;
   setIsOnline: (status: boolean) => void;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, isOnline, setIsOnline }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, isOnline, setIsOnline, lastSyncTime, setLastSyncTime }}>
       {children}
     </AuthContext.Provider>
   );

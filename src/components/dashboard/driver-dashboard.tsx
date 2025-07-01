@@ -31,7 +31,7 @@ const DriverDashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [editableStatus, setEditableStatus] = useState("");
   
-  const { setIsOnline } = useAuth();
+  const { setIsOnline, lastSyncTime } = useAuth();
   const { toast } = useToast();
 
   const loadShipments = useCallback(async () => {
@@ -53,7 +53,7 @@ const DriverDashboard = () => {
 
   useEffect(() => {
     loadShipments();
-  }, [loadShipments]);
+  }, [loadShipments, lastSyncTime]);
   
   const filteredShipments = useMemo(() => {
     if (!searchTerm) return allShipments;

@@ -18,7 +18,7 @@ const DockWorkerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const { setIsOnline } = useAuth();
+  const { setIsOnline, lastSyncTime } = useAuth();
 
   useEffect(() => {
     const loadShipments = async () => {
@@ -39,7 +39,7 @@ const DockWorkerDashboard = () => {
     };
 
     loadShipments();
-  }, [setIsOnline]);
+  }, [setIsOnline, lastSyncTime]);
 
   const filteredShipments = useMemo(() => {
     if (!searchTerm) return allShipments;

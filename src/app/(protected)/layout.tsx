@@ -19,7 +19,7 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, logout, isOnline } = useAuth();
+  const { user, isLoading, logout, isOnline, setLastSyncTime } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
@@ -32,18 +32,18 @@ export default function ProtectedLayout({
     }
     
     const handleSync = async () => {
+      if (isSyncing) return;
       setIsSyncing(true);
       toast({ title: 'Syncing...', description: 'Attempting to sync offline updates.' });
       const result = await syncPendingUpdates();
       if (result.success) {
         toast({ title: 'Sync Complete', description: result.message });
+        setLastSyncTime(Date.now());
       } else {
         toast({ variant: 'destructive', title: 'Sync Failed', description: result.message });
       }
       setPendingCount(getPendingUpdateCount());
       setIsSyncing(false);
-      // Consider a full page reload or state refresh to show synced data
-      window.location.reload();
     };
 
     const handleOnline = () => {
@@ -62,7 +62,7 @@ export default function ProtectedLayout({
     return () => {
       window.removeEventListener('online', handleOnline);
     };
-  }, [toast]);
+  }, [toast, isSyncing, setLastSyncTime]);
 
   useEffect(() => {
     if (!isLoading && !user) {
