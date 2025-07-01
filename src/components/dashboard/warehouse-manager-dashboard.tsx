@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon } from "lucide-react";
 import { fetchAllShipments, Shipment } from '@/services/logistics-api';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
 
 export default function WarehouseManagerDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
@@ -62,7 +62,6 @@ export default function WarehouseManagerDashboard() {
     const chartConfig: ChartConfig = {
       count: {
         label: "Shipments",
-        color: "hsl(var(--primary))",
       },
     };
 
@@ -157,7 +156,11 @@ export default function WarehouseManagerDashboard() {
                                 />
                                 <YAxis allowDecimals={false} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="count" fill="hsl(var(--primary))" radius={4} />
+                                <Bar dataKey="count" radius={4}>
+                                    {chartData.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ChartContainer>
                     ) : (

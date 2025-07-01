@@ -44,6 +44,9 @@ export default function ProtectedLayout({
   }
   
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const managerAvatarUrl = 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=2940&auto=format&fit=crop';
+  const avatarSrc = user.role === 'Warehouse Manager' ? managerAvatarUrl : `https://i.pravatar.cc/150?u=${user?.username}`;
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -63,7 +66,7 @@ export default function ProtectedLayout({
               <span className="text-xs text-muted-foreground truncate">{user.role}</span>
             </div>
             <Avatar className="h-9 w-9">
-              <AvatarImage src={`https://i.pravatar.cc/150?u=${user?.username}`} />
+              <AvatarImage src={avatarSrc} alt={user.username} />
               <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
             </Avatar>
              <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={logout}>
