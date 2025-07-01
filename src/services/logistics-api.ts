@@ -12,7 +12,7 @@ export interface Shipment {
   items: { itemID: string; name: string; quantity: number }[];
 }
 
-const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
+const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=100';
 const USERNAME = 'chaos_coder_01';
 const PASSWORD = 'Uk$7QkWq7U2yiHCso';
 
@@ -29,28 +29,34 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${basicAuth}`,
       },
-      // In a real production environment, you would want to ensure the server
-      // certificate is fully trusted. For development, direct API calls like this
-      // often require more lenient security settings if certificates are self-signed.
-      // Next.js fetch handles this reasonably well on the server.
-       cache: 'no-store', // Disable caching for this request
+       cache: 'no-store',
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('Logistics API Error:', response.status, errorBody);
+      console.error('Logistics API Error:', { status: response.status, body: errorBody });
       throw new Error(`Failed to fetch data from logistics API. Status: ${response.status}`);
     }
 
     const data = await response.json();
     
+    if (!data.rows || !Array.isArray(data.rows)) {
+        console.error('Invalid data structure received from API: "rows" array is missing.', data);
+        throw new Error('Invalid data structure from API.');
+    }
+
     // The documents are in the 'rows' array, inside the 'doc' property.
-    // We also filter out any potential design documents or other non-shipment entries.
+    // We filter out any potential design documents or other non-shipment entries.
     const shipments = data.rows
-      .filter((row: any) => row.doc && row.doc.shipmentID)
+      .filter((row: any) => row && row.doc && row.doc.shipmentID)
       .map((row: any) => ({
-        id: row.id,
-        ...row.doc
+        id: row.id || row.doc.shipmentID, // Fallback for id
+        shipmentID: row.doc.shipmentID,
+        rfid: row.doc.rfid,
+        origin: row.doc.origin,
+        destination: row.doc.destination,
+        status: row.doc.status,
+        items: row.doc.items || [],
       }));
 
     return shipments as Shipment[];
