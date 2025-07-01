@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Search, AlertCircle } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon } from "lucide-react";
 import { fetchAllShipments, Shipment } from '@/services/logistics-api';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 export default function WarehouseManagerDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
@@ -37,6 +39,32 @@ export default function WarehouseManagerDashboard() {
         };
         loadShipments();
     }, []);
+
+    const stats = useMemo(() => {
+        return {
+            total: allShipments.length,
+            inTransit: allShipments.filter(s => s.status === 'in_transit').length,
+            delayed: allShipments.filter(s => s.status === 'delayed').length,
+            delivered: allShipments.filter(s => s.status === 'delivered').length,
+        }
+    }, [allShipments]);
+
+    const chartData = useMemo(() => {
+        const statusCounts = allShipments.reduce((acc, shipment) => {
+            const status = shipment.status || "unknown";
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+    }, [allShipments]);
+
+    const chartConfig: ChartConfig = {
+      count: {
+        label: "Shipments",
+        color: "hsl(var(--primary))",
+      },
+    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,6 +97,77 @@ export default function WarehouseManagerDashboard() {
 
     return (
         <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Shipments</CardTitle>
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.total}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">In Transit</CardTitle>
+                        <Truck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.inTransit}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Delayed</CardTitle>
+                        <Timer className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.delayed}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Delivered</CardTitle>
+                        <CheckCircleIcon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.delivered}</div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><BarChartIcon className="h-6 w-6" /> Shipment Status Overview</CardTitle>
+                    <CardDescription>A summary of all shipments by their current status.</CardDescription>
+                </CardHeader>
+                <CardContent className="pl-2">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : chartData.length > 0 ? (
+                        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                            <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 5, left: -10 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis 
+                                    dataKey="status" 
+                                    tickLine={false} 
+                                    tickMargin={10} 
+                                    axisLine={false}
+                                    tickFormatter={(value) => value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                />
+                                <YAxis allowDecimals={false} />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Bar dataKey="count" fill="hsl(var(--primary))" radius={4} />
+                            </BarChart>
+                        </ChartContainer>
+                    ) : (
+                        <div className="flex justify-center items-center h-64">
+                            <p className="text-muted-foreground">No chart data available.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Search className="h-6 w-6" /> Shipment Lookup</CardTitle>
@@ -76,18 +175,13 @@ export default function WarehouseManagerDashboard() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 mb-4">
-                        <Select value={searchType} onValuechange={(value) => {
-                            setSearchType(value);
-                            setSearchTerm('');
-                            setFilteredShipments(allShipments);
-                        }}>
+                        <Select value={searchType} onValuechange={(value) => setSearchType(value)}>
                             <SelectTrigger className="w-full sm:w-[150px]">
                                 <SelectValue placeholder="Search by..." />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="shipment_id">Shipment ID</SelectItem>
                                 <SelectItem value="rfid">RFID</SelectItem>
-                                <SelectItem value="status">Status</SelectItem>
                             </SelectContent>
                         </Select>
                         {searchType === 'status' ? (
