@@ -1,8 +1,6 @@
 
 'use server';
 
-import { mockShipments } from './mock-data';
-
 // Defines the structure of the 'logistics' object found in each document.
 export interface Shipment {
   id: string; // The document ID from Couchbase, used for React keys
@@ -20,24 +18,10 @@ export interface Shipment {
 
 /**
  * Fetches all shipment documents.
- * THIS IS CURRENTLY USING MOCK DATA TO AVOID API CONNECTION ISSUES.
- * To re-enable the live API, comment out the mock implementation and uncomment the try/catch block.
  * @returns A promise that resolves to an array of shipments.
  */
 export async function fetchAllShipments(): Promise<Shipment[]> {
-  console.log("Fetching mock shipment data.");
-  // Using mock data to allow UI development to proceed.
-  return new Promise(resolve => {
-    setTimeout(() => {
-        resolve(mockShipments);
-    }, 500); // Simulate network delay
-  });
-
-  /*
   // --- LIVE API IMPLEMENTATION ---
-  // The code below is for connecting to the live Couchbase API.
-  // It has been commented out to work around persistent connection errors.
-
   const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=100';
   const USERNAME = 'chaos_coder_01';
   const PASSWORD = 'Uk$7QkWq7U2yiHCso';
@@ -94,5 +78,4 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
     console.error('Error in fetchAllShipments:', error);
     throw new Error('Failed to load shipment data. Please check the connection and try again.');
   }
-  */
 }
