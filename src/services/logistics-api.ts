@@ -49,15 +49,18 @@ const getMockData = (): Shipment[] => {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
+    const PROXY_URL = 'https://proxy.cors.sh/';
+    const TARGET_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
+    const API_URL = `${PROXY_URL}${TARGET_URL}`;
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
-        console.log("Attempting to fetch live data from API...");
+        console.log("Attempting to fetch live data from API via proxy...");
         const response = await fetch(API_URL, {
             method: 'GET',
             headers: {
               'Authorization': `Basic ${basicAuth}`,
+              'x-requested-with': 'XMLHttpRequest' // Required by some CORS proxies
             },
         });
 
