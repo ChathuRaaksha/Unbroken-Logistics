@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -16,7 +17,7 @@ export default function WarehouseManagerDashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
-    const [searchType, setSearchType] = useState('shipmentID');
+    const [searchType, setSearchType] = useState('shipment_id');
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
@@ -25,11 +26,10 @@ export default function WarehouseManagerDashboard() {
             setError(null);
             try {
                 const shipments = await fetchAllShipments();
-                const validShipments = shipments.filter(s => s.shipmentID && s.status);
-                setAllShipments(validShipments);
-                setFilteredShipments(validShipments);
-            } catch (e) {
-                setError('Failed to load shipment data. Please check the connection and try again.');
+                setAllShipments(shipments);
+                setFilteredShipments(shipments);
+            } catch (e: any) {
+                setError(e.message || 'Failed to load shipment data. Please check the connection and try again.');
                 console.error(e);
             } finally {
                 setIsLoading(false);
@@ -76,7 +76,7 @@ export default function WarehouseManagerDashboard() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 mb-4">
-                        <Select value={searchType} onValueChange={(value) => {
+                        <Select value={searchType} onValuechange={(value) => {
                             setSearchType(value);
                             setSearchTerm('');
                             setFilteredShipments(allShipments);
@@ -85,7 +85,7 @@ export default function WarehouseManagerDashboard() {
                                 <SelectValue placeholder="Search by..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="shipmentID">Shipment ID</SelectItem>
+                                <SelectItem value="shipment_id">Shipment ID</SelectItem>
                                 <SelectItem value="rfid">RFID</SelectItem>
                                 <SelectItem value="status">Status</SelectItem>
                             </SelectContent>
@@ -141,7 +141,7 @@ export default function WarehouseManagerDashboard() {
                                     {filteredShipments.length > 0 ? (
                                         filteredShipments.map((shipment) => (
                                             <TableRow key={shipment.id}>
-                                                <TableCell className="font-medium">{shipment.shipmentID}</TableCell>
+                                                <TableCell className="font-medium">{shipment.shipment_id}</TableCell>
                                                 <TableCell>{shipment.origin}</TableCell>
                                                 <TableCell>{shipment.destination}</TableCell>
                                                 <TableCell>{shipment.status}</TableCell>

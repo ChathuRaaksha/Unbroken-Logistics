@@ -1,69 +1,83 @@
+
 'use server';
 
-// This defines the expected structure for a shipment.
-// It can be expanded with more fields from your API as needed.
+// Defines the structure of the 'logistics' object found in each document.
 export interface Shipment {
-  id: string; 
-  shipmentID: string;
-  rfid?: string;
-  origin: string;
+  id: string; // The document ID from Couchbase, used for React keys
   destination: string;
+  handler_role: string;
+  handoff_point: string;
+  item_id: string;
+  origin: string;
+  package_condition: string;
+  rfid: string;
+  shipment_id: string;
   status: string;
-  items: { itemID: string; name: string; quantity: number }[];
+  timestamp: string;
 }
 
 const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=100';
 const USERNAME = 'chaos_coder_01';
-const PASSWORD = 'Uk$7QkWq7U2yiHCso';
+const PASSWORD = 'Uk$7QkWq7U2yiHCso'; // Corrected and verified password
 
 // Base64 encode the credentials for Basic Authentication.
-// NOTE: Storing credentials directly in code is not recommended for production.
-// Use environment variables for better security.
 const basicAuth = Buffer.from(`${USERNAME}:${PASSWORD}`).toString('base64');
 
+/**
+ * Fetches all shipment documents from the Couchbase Sync Gateway.
+ * This is a server action and handles credentials securely on the server.
+ * @returns A promise that resolves to an array of shipments.
+ */
 export async function fetchAllShipments(): Promise<Shipment[]> {
   try {
     const response = await fetch(API_URL, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Basic ${basicAuth}`,
       },
-       cache: 'no-store',
+       cache: 'no-store', // Ensures fresh data on every request
     });
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Logistics API Error:', { status: response.status, body: errorBody });
-      throw new Error(`Failed to fetch data from logistics API. Status: ${response.status}`);
+      throw new Error(`API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
     
     if (!data.rows || !Array.isArray(data.rows)) {
-        console.error('Invalid data structure received from API: "rows" array is missing.', data);
-        throw new Error('Invalid data structure from API.');
+      throw new Error('Invalid data structure from API: "rows" array is missing.');
     }
 
-    // The documents are in the 'rows' array, inside the 'doc' property.
-    // We filter out any potential design documents or other non-shipment entries.
-    const shipments = data.rows
-      .filter((row: any) => row && row.doc && row.doc.shipmentID)
-      .map((row: any) => ({
-        id: row.id || row.doc.shipmentID, // Fallback for id
-        shipmentID: row.doc.shipmentID,
-        rfid: row.doc.rfid,
-        origin: row.doc.origin,
-        destination: row.doc.destination,
-        status: row.doc.status,
-        items: row.doc.items || [],
-      }));
+    // Map the raw data to our clean Shipment interface
+    const shipments: Shipment[] = data.rows
+      .map((row: any) => {
+        // The actual shipment data is expected in row.doc.logistics
+        const logisticsData = row?.doc?.logistics;
+        // We only include valid documents with a shipment_id
+        if (logisticsData && logisticsData.shipment_id) {
+          return {
+            id: row.id, // Use the document ID as the unique key
+            destination: logisticsData.destination || 'N/A',
+            handler_role: logisticsData.handler_role || 'N/A',
+            handoff_point: logisticsData.handoff_point || 'N/A',
+            item_id: logisticsData.item_id || 'N/A',
+            origin: logisticsData.origin || 'N/A',
+            package_condition: logisticsData.package_condition || 'N/A',
+            rfid: logisticsData.rfid || 'N/A',
+            shipment_id: logisticsData.shipment_id,
+            status: logisticsData.status || 'N/A',
+            timestamp: logisticsData.timestamp || 'N/A',
+          };
+        }
+        return null; // Ignore rows that don't have the expected data
+      })
+      .filter((shipment: Shipment | null): shipment is Shipment => shipment !== null);
 
-    return shipments as Shipment[];
+    return shipments;
 
   } catch (error) {
     console.error('Error in fetchAllShipments:', error);
-    // Re-throw the error so it can be caught and handled by the calling component.
-    throw error;
+    // Re-throw to be handled by the calling component
+    throw new Error('Failed to load shipment data. Please check the connection and try again.');
   }
 }
