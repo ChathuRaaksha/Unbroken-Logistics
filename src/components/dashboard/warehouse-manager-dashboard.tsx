@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon } from "lucide-react";
-import { fetchAllShipments, Shipment, FetchShipmentsResult } from '@/services/logistics-api';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X } from "lucide-react";
+import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 export default function WarehouseManagerDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
@@ -27,7 +31,17 @@ export default function WarehouseManagerDashboard() {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const { setIsOnline } = useAuth();
+    const { toast } = useToast();
 
+    // State for the edit dialog
+    const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [editableData, setEditableData] = useState<Partial<Shipment>>({});
+
+    const uniqueStatuses = useMemo(() => ['picked_up', 'in_transit', 'delayed', 'delivered'], []);
+    const uniqueHandlerRoles = useMemo(() => ['driver', 'dock_worker', 'warehouse_staff'], []);
+    const uniquePackageConditions = useMemo(() => ['intact', 'damaged', 'missing'], []);
 
     useEffect(() => {
         const loadShipments = async () => {
@@ -48,12 +62,6 @@ export default function WarehouseManagerDashboard() {
         };
         loadShipments();
     }, [setIsOnline]);
-    
-    const uniqueStatuses = useMemo(() => {
-        const statuses = new Set(allShipments.map(s => s.status));
-        return Array.from(statuses);
-    }, [allShipments]);
-
 
     useEffect(() => {
         let results = allShipments;
@@ -83,7 +91,6 @@ export default function WarehouseManagerDashboard() {
 
     const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
 
-
     const stats = useMemo(() => {
         return {
             total: allShipments.length,
@@ -104,42 +111,49 @@ export default function WarehouseManagerDashboard() {
     }, [allShipments]);
 
     const chartConfig: ChartConfig = {
-      count: {
-        label: "Shipments",
-      },
-      in_transit: {
-        color: "hsl(var(--chart-1))",
-      },
-      delivered: {
-        color: "hsl(var(--chart-2))",
-      },
-      delayed: {
-        color: "hsl(var(--chart-3))",
-      },
-      picked_up: {
-          color: "hsl(var(--chart-4))",
-      },
-       unknown: {
-          color: "hsl(var(--chart-5))",
-      },
+      count: { label: "Shipments" },
+      in_transit: { color: "hsl(var(--chart-1))" },
+      delivered: { color: "hsl(var(--chart-2))" },
+      delayed: { color: "hsl(var(--chart-3))" },
+      picked_up: { color: "hsl(var(--chart-4))" },
+      unknown: { color: "hsl(var(--chart-5))" },
     };
     
-    const handlePreviousPage = () => {
-        if (currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) {
-          setCurrentPage(currentPage + 1);
-        }
-    };
-
+    const handlePreviousPage = () => (currentPage > 1) && setCurrentPage(currentPage - 1);
+    const handleNextPage = () => (currentPage < totalPages) && setCurrentPage(currentPage + 1);
     const handleRowsPerPageChange = (value: string) => {
         setRowsPerPage(Number(value));
         setCurrentPage(1);
     };
+
+    const handleRowClick = (shipment: Shipment) => {
+        setSelectedShipment(shipment);
+        setEditableData(shipment);
+        setIsDialogOpen(true);
+    };
+
+    const handleUpdateField = (field: keyof Shipment, value: string) => {
+        setEditableData(prev => ({...prev, [field]: value}));
+    };
+
+    const handleSaveChanges = async () => {
+        if (!selectedShipment) return;
+        setIsUpdating(true);
+        const result = await updateShipment(selectedShipment.id, editableData);
+        if (result.success && result.updatedShipment) {
+            setAllShipments(prev => prev.map(s => s.id === result.updatedShipment!.id ? result.updatedShipment! : s));
+            toast({ title: 'Success', description: 'Shipment updated successfully.' });
+            setIsDialogOpen(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+        setIsUpdating(false);
+    };
+    
+    const hasChanges = useMemo(() => {
+        if (!selectedShipment) return false;
+        return JSON.stringify(selectedShipment) !== JSON.stringify(editableData);
+    }, [selectedShipment, editableData]);
 
     return (
         <div className="space-y-6">
@@ -289,7 +303,7 @@ export default function WarehouseManagerDashboard() {
                                 <TableBody>
                                     {paginatedShipments.length > 0 ? (
                                         paginatedShipments.map((shipment) => (
-                                            <TableRow key={shipment.id}>
+                                            <TableRow key={shipment.id} onClick={() => handleRowClick(shipment)} className="cursor-pointer">
                                                 <TableCell className="font-medium">{shipment.shipment_id}</TableCell>
                                                 <TableCell>{shipment.origin}</TableCell>
                                                 <TableCell>{shipment.destination}</TableCell>
@@ -350,6 +364,72 @@ export default function WarehouseManagerDashboard() {
                     )}
                 </CardContent>
             </Card>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                     {selectedShipment && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <Edit className="h-6 w-6"/>
+                                    Edit Shipment #{selectedShipment.shipment_id}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Update the details for this shipment. Click save when you're done.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="origin" className="text-right">Origin</Label>
+                                    <Input id="origin" value={editableData.origin || ''} onChange={(e) => handleUpdateField('origin', e.target.value)} className="col-span-3" />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="destination" className="text-right">Destination</Label>
+                                    <Input id="destination" value={editableData.destination || ''} onChange={(e) => handleUpdateField('destination', e.target.value)} className="col-span-3" />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="handoff" className="text-right">Handoff</Label>
+                                    <Input id="handoff" value={editableData.handoff_point || ''} onChange={(e) => handleUpdateField('handoff_point', e.target.value)} className="col-span-3" />
+                                </div>
+                                 <Separator />
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="status" className="text-right">Status</Label>
+                                    <Select value={editableData.status} onValueChange={(value) => handleUpdateField('status', value)}>
+                                        <SelectTrigger className="col-span-3"><SelectValue placeholder="Select status..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {uniqueStatuses.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="handler" className="text-right">Handler</Label>
+                                    <Select value={editableData.handler_role} onValueChange={(value) => handleUpdateField('handler_role', value)}>
+                                        <SelectTrigger className="col-span-3"><SelectValue placeholder="Select handler..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {uniqueHandlerRoles.map(r => <SelectItem key={r} value={r}>{r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                 <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="condition" className="text-right">Condition</Label>
+                                    <Select value={editableData.package_condition} onValueChange={(value) => handleUpdateField('package_condition', value)}>
+                                        <SelectTrigger className="col-span-3"><SelectValue placeholder="Select condition..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {uniquePackageConditions.map(c => <SelectItem key={c} value={c}>{c.replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsDialogOpen(false)}><X className="mr-2 h-4 w-4"/>Cancel</Button>
+                                <Button onClick={handleSaveChanges} disabled={!hasChanges || isUpdating}>
+                                    {isUpdating ? <Loader2 className="animate-spin" /> : <><CheckCircleIcon className="mr-2 h-4 w-4"/>Save Changes</>}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

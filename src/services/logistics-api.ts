@@ -80,6 +80,8 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
             }));
 
         console.log(`Successfully fetched ${shipments.length} live shipments.`);
+        // Sync API data with localStorage for consistent updates
+        localStorage.setItem(MOCK_DATA_KEY, JSON.stringify(shipments));
         return { shipments, isOnline: true };
 
     } catch (error: any) {
@@ -91,17 +93,16 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
 
 
 /**
- * MOCK FUNCTION: Simulates updating a shipment's status and persists it to localStorage.
+ * MOCK FUNCTION: Simulates updating a shipment's details and persists it to localStorage.
  * @param shipmentId The ID of the shipment to update.
- * @param newStatus The new status to set.
- * @returns A promise that resolves to a success or failure object.
+ * @param updates An object containing the fields to update.
+ * @returns A promise that resolves to a success or failure object, including the updated shipment.
  */
-export async function updateShipmentStatus(
+export async function updateShipment(
   shipmentId: string,
-  newStatus: string
-): Promise<{ success: boolean; message: string }> {
-  // Since we are now using localStorage, this function runs on the client
-  console.log(`Updating shipment ID ${shipmentId} to status "${newStatus}" in localStorage.`);
+  updates: Partial<Omit<Shipment, 'id'>>
+): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
+  console.log(`Updating shipment ID ${shipmentId} with`, updates);
   
   try {
     const currentShipments = getMockData();
@@ -112,18 +113,19 @@ export async function updateShipmentStatus(
     }
 
     // Update the shipment
-    currentShipments[shipmentIndex] = {
+    const updatedShipment = {
         ...currentShipments[shipmentIndex],
-        status: newStatus,
-        timestamp: new Date().toISOString(), // Update timestamp to reflect the change
+        ...updates,
+        timestamp: new Date().toISOString(), // Always update timestamp on any change
     };
+    currentShipments[shipmentIndex] = updatedShipment;
 
     // Save back to localStorage
     localStorage.setItem(MOCK_DATA_KEY, JSON.stringify(currentShipments));
 
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
 
-    return { success: true, message: 'Shipment status updated successfully!' };
+    return { success: true, message: 'Shipment updated successfully!', updatedShipment };
   } catch (error: any) {
      console.error("Failed to update mock data in localStorage", error);
      return { success: false, message: `Failed to update status: ${error.message}` };

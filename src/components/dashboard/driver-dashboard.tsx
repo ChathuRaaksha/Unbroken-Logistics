@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Truck, PackageCheck, PackageX, PackageSearch, Clock, MapPin, Hash, Search } from "lucide-react";
-import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipmentStatus } from '@/services/logistics-api';
+import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -117,12 +117,12 @@ const DriverDashboard = () => {
     if (!selectedShipment || !editableStatus || editableStatus === selectedShipment.status) return;
 
     setIsUpdating(true);
-    const result = await updateShipmentStatus(selectedShipment.id, editableStatus);
+    const result = await updateShipment(selectedShipment.id, { status: editableStatus });
 
-    if (result.success) {
+    if (result.success && result.updatedShipment) {
         setAllShipments(prevShipments =>
             prevShipments.map(s =>
-                s.id === selectedShipment.id ? { ...s, status: editableStatus } : s
+                s.id === selectedShipment.id ? result.updatedShipment! : s
             )
         );
         toast({ title: "Success", description: result.message });
