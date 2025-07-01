@@ -29,20 +29,20 @@ export interface FetchShipmentsResult {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const endpoint = 'https://e6f479e4-23e5-4a57-a35b-6c41648a0d9b-us-east1.apps.astra.datastax.com/api/rest/v2/keyspaces/unbroken/scp/query';
-    const apiToken = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
+    // Removed the cors-anywhere proxy and added include_docs=true to get full document data
+    const API_URL = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?limit=500&include_docs=true';
+    const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
-        console.log("Attempting to fetch live data from API...");
-        const response = await fetch(endpoint, {
-            method: 'POST',
+        console.log("Attempting to fetch live data directly from API...");
+        const response = await fetch(API_URL, {
+            method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'X-Cassandra-Token': apiToken,
+              'Authorization': `Basic ${basicAuth}`,
+              // Server-to-server requests don't have CORS issues, so Origin/X-Requested-With are not needed.
             },
-            body: JSON.stringify({ query: "SELECT * FROM logistics" }),
-            cache: 'no-store', // Disable caching to get fresh data
-        });
+            cache: 'no-store', // Disable caching to ensure fresh data
+          });
 
         if (!response.ok) {
             const errorBody = await response.text();
@@ -50,11 +50,18 @@ export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
         }
 
         const json = await response.json();
-        
-        const shipments = (json.data || []).map((item: any, index: number) => ({
-            ...item,
-            id: item.shipment_id || `shipment-${index}`, // Ensure a unique key
-        })).filter((item: any) => item.shipment_id); // Filter out any potentially invalid records
+
+        if (!json.rows) {
+            throw new Error('API response is missing the "rows" property.');
+        }
+
+        // Correctly parse the Couchbase response structure
+        const shipments: Shipment[] = json.rows
+            .filter((row: any) => row.doc && row.doc.logistics) // Ensure the document and logistics data exist
+            .map((row: any) => ({
+                id: row.id, // Use the document ID from Couchbase as the unique key
+                ...row.doc.logistics,
+            }));
 
         console.log(`Successfully fetched ${shipments.length} live shipments.`);
         return { shipments, isOnline: true };
