@@ -39,7 +39,9 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+       const errorBody = await response.text();
+       console.error(`API Error: ${response.status}`, errorBody);
+       throw new Error(`API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
@@ -52,9 +54,8 @@ export async function fetchAllShipments(): Promise<Shipment[]> {
     const shipments: Shipment[] = data.rows
       .map((row: any) => {
         // The actual shipment data is expected in row.doc.logistics
-        const logisticsData = row?.doc?.logistics;
-        // We only include valid documents with a shipment_id
-        if (logisticsData && logisticsData.shipment_id) {
+        if (row.doc && row.doc.logistics && row.doc.logistics.shipment_id) {
+          const logisticsData = row.doc.logistics;
           return {
             id: row.id, // Use the document ID as the unique key
             destination: logisticsData.destination || 'N/A',
