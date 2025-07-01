@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 
-export default function WarehouseManagerDashboard() {
+export default function WarehouseStaffDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
     const [filteredShipments, setFilteredShipments] = useState<Shipment[]>([]);
     const [isLoading, setIsLoading] = useState(true);

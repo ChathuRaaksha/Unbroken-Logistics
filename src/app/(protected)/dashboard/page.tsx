@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import DriverDashboard from '@/components/dashboard/driver-dashboard';
 import DockWorkerDashboard from '@/components/dashboard/dock-worker-dashboard';
-import WarehouseManagerDashboard from '@/components/dashboard/warehouse-manager-dashboard';
+import WarehouseStaffDashboard from '@/components/dashboard/warehouse-manager-dashboard';
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -14,8 +14,8 @@ export default function DashboardPage() {
                 return <DriverDashboard />;
             case 'Dock Worker':
                 return <DockWorkerDashboard />;
-            case 'Warehouse Manager':
-                return <WarehouseManagerDashboard />;
+            case 'Warehouse Staff':
+                return <WarehouseStaffDashboard />;
             default:
                 // This can be a fallback or a loading state
                 return <p>Loading dashboard...</p>;

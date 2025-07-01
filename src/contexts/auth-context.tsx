@@ -3,7 +3,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Role = 'Driver' | 'Dock Worker' | 'Warehouse Manager';
+type Role = 'Driver' | 'Dock Worker' | 'Warehouse Staff';
 type User = {
   username: string;
   role: Role;
@@ -20,7 +20,7 @@ export type AuthContextType = {
 const mockUsers: Record<string, { password: string; role: Role }> = {
   driver_01: { password: 'pass123', role: 'Driver' },
   dock_01: { password: 'pass123', role: 'Dock Worker' },
-  manager_01: { password: 'pass123', role: 'Warehouse Manager' },
+  wh_01: { password: 'pass123', role: 'Warehouse Staff' },
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

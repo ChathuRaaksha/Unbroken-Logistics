@@ -3,7 +3,7 @@
 ## Core Features:
 
 - User Authentication: User login with username and password.
-- Role-Based Dashboard: Role-based dashboard display for Driver, Dock Worker, and Warehouse Manager.
+- Role-Based Dashboard: Role-based dashboard display for Driver, Dock Worker, and Warehouse Staff.
 - Personalized Greeting: Display "Hello, [Username]!" on the dashboard, where [Username] is the logged-in user's username.
 - Role display: Display the user's role on the dashboard screen.
 

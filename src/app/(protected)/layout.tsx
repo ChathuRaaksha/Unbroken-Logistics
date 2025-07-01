@@ -46,7 +46,7 @@ export default function ProtectedLayout({
   
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
   const managerAvatarUrl = 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=2940&auto=format&fit=crop';
-  const avatarSrc = user.role === 'Warehouse Manager' ? managerAvatarUrl : `https://i.pravatar.cc/150?u=${user?.username}`;
+  const avatarSrc = user.role === 'Warehouse Staff' ? managerAvatarUrl : `https://i.pravatar.cc/150?u=${user?.username}`;
 
 
   return (

@@ -100,7 +100,7 @@ export default function LoginPage() {
                     <p className="font-semibold text-foreground">Log in with one of the following:</p>
                     <p>• <strong>Driver:</strong> driver_01 / pass123</p>
                     <p>• <strong>Dock Worker:</strong> dock_01 / pass123</p>
-                    <p>• <strong>Warehouse Manager:</strong> manager_01 / pass123</p>
+                    <p>• <strong>Warehouse Staff:</strong> wh_01 / pass123</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>
