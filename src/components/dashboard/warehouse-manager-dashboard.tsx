@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,25 +43,26 @@ export default function WarehouseStaffDashboard() {
     const uniqueHandlerRoles = useMemo(() => ['driver', 'dock_worker', 'warehouse_staff'], []);
     const uniquePackageConditions = useMemo(() => ['intact', 'damaged', 'missing'], []);
 
-    useEffect(() => {
-        const loadShipments = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
-                setAllShipments(shipments);
-                setFilteredShipments(shipments);
-                setIsOnline(isOnline);
-            } catch (e: any) {
-                setError(e.message || 'Failed to process shipment data. Please try again.');
-                console.error(e);
-                setIsOnline(false);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadShipments();
+    const loadShipments = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
+            setAllShipments(shipments);
+            setFilteredShipments(shipments);
+            setIsOnline(isOnline);
+        } catch (e: any) {
+            setError(e.message || 'Failed to process shipment data. Please try again.');
+            console.error(e);
+            setIsOnline(false);
+        } finally {
+            setIsLoading(false);
+        }
     }, [setIsOnline]);
+
+    useEffect(() => {
+        loadShipments();
+    }, [loadShipments]);
 
     useEffect(() => {
         let results = allShipments;
@@ -135,25 +136,28 @@ export default function WarehouseStaffDashboard() {
     const handleUpdateField = (field: keyof Shipment, value: string) => {
         setEditableData(prev => ({...prev, [field]: value}));
     };
-
-    const handleSaveChanges = async () => {
-        if (!selectedShipment || !hasChanges) return;
-        setIsUpdating(true);
-        const result = await updateShipment(selectedShipment, editableData);
-        if (result.success && result.updatedShipment) {
-            setAllShipments(prev => prev.map(s => s.id === result.updatedShipment!.id ? result.updatedShipment! : s));
-            toast({ title: 'Success', description: 'Shipment updated successfully.' });
-            setIsDialogOpen(false);
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.message });
-        }
-        setIsUpdating(false);
-    };
     
     const hasChanges = useMemo(() => {
         if (!selectedShipment) return false;
         return JSON.stringify(selectedShipment) !== JSON.stringify(editableData);
     }, [selectedShipment, editableData]);
+
+    const handleSaveChanges = async () => {
+        if (!selectedShipment || !hasChanges) return;
+        setIsUpdating(true);
+        
+        const result = await updateShipment(selectedShipment, editableData);
+
+        if (result.success && result.updatedShipment) {
+            setAllShipments(prev => prev.map(s => s.id === result.updatedShipment!.id ? result.updatedShipment! : s));
+            toast({ title: 'Update Queued', description: result.message });
+            setIsDialogOpen(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+            loadShipments();
+        }
+        setIsUpdating(false);
+    };
 
     return (
         <div className="space-y-6">

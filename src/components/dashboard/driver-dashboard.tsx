@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -33,26 +34,26 @@ const DriverDashboard = () => {
   const { setIsOnline } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadShipments = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
-        const driverShipments = shipments.filter(s => s.handler_role === 'driver');
-        setAllShipments(driverShipments);
-        setIsOnline(isOnline);
-      } catch (err: any) {
-        console.error("Error processing driver data:", err);
-        setError(`Failed to process shipment data: ${err.message}`);
-        setIsOnline(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadShipments();
+  const loadShipments = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { shipments, isOnline }: FetchShipmentsResult = await fetchAllShipments();
+      const driverShipments = shipments.filter(s => s.handler_role === 'driver');
+      setAllShipments(driverShipments);
+      setIsOnline(isOnline);
+    } catch (err: any) {
+      console.error("Error processing driver data:", err);
+      setError(`Failed to process shipment data: ${err.message}`);
+      setIsOnline(false);
+    } finally {
+      setLoading(false);
+    }
   }, [setIsOnline]);
+
+  useEffect(() => {
+    loadShipments();
+  }, [loadShipments]);
   
   const filteredShipments = useMemo(() => {
     if (!searchTerm) return allShipments;
@@ -120,13 +121,14 @@ const DriverDashboard = () => {
     const result = await updateShipment(selectedShipment, { status: editableStatus });
 
     if (result.success && result.updatedShipment) {
+        // Optimistically update the UI
         setAllShipments(prevShipments =>
             prevShipments.map(s =>
                 s.id === selectedShipment.id ? result.updatedShipment! : s
             )
         );
         setSelectedShipment(result.updatedShipment);
-        toast({ title: "Success", description: result.message });
+        toast({ title: "Update Queued", description: result.message });
         setIsDialogOpen(false);
     } else {
         toast({
@@ -134,6 +136,8 @@ const DriverDashboard = () => {
             title: "Update Failed",
             description: result.message,
         });
+        // Optional: Revert optimistic update if API call fails immediately
+        loadShipments();
     }
     setIsUpdating(false);
   };

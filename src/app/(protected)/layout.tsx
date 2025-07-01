@@ -1,14 +1,18 @@
+
 'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Truck, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, Truck, Wifi, WifiOff, CloudSync } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { getPendingUpdateCount, syncPendingUpdates } from '@/services/logistics-api';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function ProtectedLayout({
   children,
@@ -17,6 +21,45 @@ export default function ProtectedLayout({
 }) {
   const { user, isLoading, logout, isOnline } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    setPendingCount(getPendingUpdateCount());
+    
+    const handleSync = async () => {
+      setIsSyncing(true);
+      toast({ title: 'Syncing...', description: 'Attempting to sync offline updates.' });
+      const result = await syncPendingUpdates();
+      if (result.success) {
+        toast({ title: 'Sync Complete', description: result.message });
+      } else {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: result.message });
+      }
+      setPendingCount(getPendingUpdateCount());
+      setIsSyncing(false);
+      // Consider a full page reload or state refresh to show synced data
+      window.location.reload();
+    };
+
+    const handleOnline = () => {
+      if (getPendingUpdateCount() > 0) {
+        handleSync();
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    // Initial sync check on load
+    if (navigator.onLine && getPendingUpdateCount() > 0) {
+      handleSync();
+    }
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [toast]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -62,6 +105,12 @@ export default function ProtectedLayout({
           </Link>
         </nav>
         <div className="flex items-center gap-4">
+            {pendingCount > 0 && (
+                <Badge variant="outline" className="flex items-center gap-1.5 whitespace-nowrap">
+                    <CloudSync className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {pendingCount} Pending
+                </Badge>
+            )}
             <Badge variant={isOnline ? 'secondary' : 'destructive'} className="flex items-center gap-1.5 whitespace-nowrap">
               {isOnline ? <Wifi className="h-4 w-4"/> : <WifiOff className="h-4 w-4"/>}
               {isOnline ? "Online" : "Offline"}
@@ -86,3 +135,4 @@ export default function ProtectedLayout({
     </div>
   );
 }
+
