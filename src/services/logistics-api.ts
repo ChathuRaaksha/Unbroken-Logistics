@@ -36,7 +36,7 @@ type PendingUpdate = {
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
     const targetUrl = 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true';
-    const API_URL = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+    const API_URL = 'https://thingproxy.freeboard.io/fetch/' + targetUrl;
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -129,7 +129,7 @@ async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<S
     const updatedDoc = { ...doc, ...updates, timestamp: new Date().toISOString() };
 
     const fullUrl = `${API_URL_BASE}${shipment.id}`;
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(fullUrl);
+    const proxyUrl = 'https://thingproxy.freeboard.io/fetch/' + fullUrl;
 
     try {
         const response = await fetch(proxyUrl, {
