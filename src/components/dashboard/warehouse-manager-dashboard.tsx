@@ -142,32 +142,34 @@ export default function WarehouseStaffDashboard() {
     
     const topDestinations = useMemo(() => {
         const cityCoordinates: { [key: string]: { x: string, y: string } } = {
-            'stockholm': { x: '55%', y: '25%' },
-            'gothenburg': { x: '54%', y: '28%' },
-            'new york': { x: '25%', y: '40%' },
-            'santa elena': { x: '20%', y: '65%' },
-            'tokyo': { x: '85%', y: '42%' },
-            'london': { x: '50%', y: '32%' },
+            'Stockholm': { x: '55%', y: '25%' },
+            'Gothenburg': { x: '54%', y: '28%' },
+            'New York': { x: '25%', y: '40%' },
+            'Santa Elena': { x: '20%', y: '65%' },
+            'Tokyo': { x: '85%', y: '42%' },
+            'London': { x: '50%', y: '32%' },
         };
         
         const counts = allShipments.reduce((acc, s) => {
-            const dest = s.destination.toLowerCase();
+            const dest = s.destination;
             if (cityCoordinates[dest]) {
-                acc[s.destination] = (acc[s.destination] || 0) + 1;
+                acc[dest] = (acc[dest] || 0) + 1;
             }
             return acc;
         }, {} as Record<string, number>);
 
         return Object.entries(counts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
             .map(([name, count]) => ({
                 name,
                 count,
-                ...cityCoordinates[name.toLowerCase()]
-            }));
+                ...cityCoordinates[name]
+            }))
+            .filter(item => item.x && item.y) // Ensure we only have items with coordinates
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
 
     }, [allShipments]);
+
 
     const chartConfig: ChartConfig = {
       count: { label: "Shipments" },
