@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Globe } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Globe, MapPin } from "lucide-react";
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -17,8 +17,6 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, ResponsiveContainer }
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { WorldMap } from './world-map';
-
 
 export default function WarehouseStaffDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
@@ -266,16 +264,26 @@ export default function WarehouseStaffDashboard() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Geographic Overview</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Top Destinations</CardTitle>
                         <CardDescription>Top shipment destinations by volume.</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-0 relative h-[324px]">
+                    <CardContent>
                        {isLoading ? (
                             <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : allShipments.length > 0 ? (
-                            <WorldMap data={allShipments} />
+                        ) : topDestinations.length > 0 ? (
+                           <div className="space-y-4 pt-2">
+                                {topDestinations.map((dest, index) => (
+                                    <div key={index} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <MapPin className="h-5 w-5 text-muted-foreground" />
+                                            <span className="font-medium">{dest.name}</span>
+                                        </div>
+                                        <span className="font-bold text-lg">{dest.count}</span>
+                                    </div>
+                                ))}
+                           </div>
                         ) : (
-                             <div className="flex justify-center items-center h-full">
+                             <div className="flex justify-center items-center h-full min-h-[200px]">
                                 <p className="text-muted-foreground">No destination data available.</p>
                             </div>
                         )}
