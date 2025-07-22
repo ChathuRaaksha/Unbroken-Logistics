@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/couchbase/:path*',
-        destination: 'https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/:path*',
+        destination: 'https://lyy7hcxorv51baby.apps.cloud.couchbase.com:4984/:path*',
       },
     ]
   },
