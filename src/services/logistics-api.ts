@@ -1,5 +1,6 @@
 
 
+
 // Defines the structure of the 'logistics' object found in each document.
 export interface Shipment {
   id: string; // The document ID, used for React keys
@@ -36,7 +37,7 @@ type PendingUpdate = {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
+    const API_URL = '/api/couchbase/_all_docs?include_docs=true&limit=500';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -84,9 +85,67 @@ export async function updateShipment(
   shipment: Shipment,
   updates: Partial<Omit<Shipment, 'id'>>
 ): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
-    const API_URL_BASE = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
+    const API_URL_BASE = '/api/couchbase/';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
-// j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics
+
+    if (!shipment?._rev) {
+        return { success: false, message: 'Document is missing a revision number.' };
+    }
+    
+    const { id, ...doc } = shipment;
+    const updatedDoc = { ...doc, ...updates, timestamp: new Date().toISOString() };
+
+    const fullUrl = `${API_URL_BASE}${shipment.id}`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Basic ${basicAuth}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedDoc),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.reason || `API PUT failed with status ${response.status}`);
+        
+        return {
+            success: true,
+            message: 'Shipment updated successfully!',
+            updatedShipment: { ...updatedDoc, id: result.id, _id: result.id, _rev: result.rev },
+        };
+    } catch (error: any) {
+        console.error('Failed to update shipment live:', error.message);
+        queueUpdateForSync(shipment.id, updatedDoc);
+        return { 
+            success: true, 
+            message: 'You are offline. Update has been queued.', 
+            updatedShipment: { ...updatedDoc, id: shipment.id } 
+        };
+    }
+}
+
+
+function queueUpdateForSync(shipmentId: string, updates: Partial<Omit<Shipment, 'id'>>) {
+    const queue: PendingUpdate[] = JSON.parse(localStorage.getItem(PENDING_UPDATES_QUEUE_KEY) || '[]');
+    // Remove sensitive fields that shouldn't be in the update payload
+    const { _id, _rev, id, ...updatePayload } = updates;
+    queue.push({ shipmentId, updates: updatePayload });
+    localStorage.setItem(PENDING_UPDATES_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function getPendingUpdateCount(): number {
+    const queue = localStorage.getItem(PENDING_UPDATES_QUEUE_KEY);
+    return queue ? JSON.parse(queue).length : 0;
+}
+
+async function apiUpdateShipmentLive(
+  shipment: Shipment,
+  updates: Partial<Omit<Shipment, 'id'>>
+): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
+    const API_URL_BASE = '/api/couchbase/';
+    const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
+
     if (!shipment?._rev) {
         return { success: false, message: 'Document is missing a revision number.' };
     }
@@ -117,20 +176,6 @@ export async function updateShipment(
         console.error('Failed to update shipment live:', error.message);
         return { success: false, message: error.message };
     }
-}
-
-
-function queueUpdateForSync(shipmentId: string, updates: Partial<Omit<Shipment, 'id'>>) {
-    const queue: PendingUpdate[] = JSON.parse(localStorage.getItem(PENDING_UPDATES_QUEUE_KEY) || '[]');
-    // Remove sensitive fields that shouldn't be in the update payload
-    const { _id, _rev, id, ...updatePayload } = updates;
-    queue.push({ shipmentId, updates: updatePayload });
-    localStorage.setItem(PENDING_UPDATES_QUEUE_KEY, JSON.stringify(queue));
-}
-
-export function getPendingUpdateCount(): number {
-    const queue = localStorage.getItem(PENDING_UPDATES_QUEUE_KEY);
-    return queue ? JSON.parse(queue).length : 0;
 }
 
 export async function syncPendingUpdates(): Promise<{ success: boolean; message: string }> {
