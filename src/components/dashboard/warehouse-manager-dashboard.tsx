@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck } from "lucide-react";
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -93,18 +93,17 @@ export default function WarehouseStaffDashboard() {
     const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
 
     const stats = useMemo(() => {
-        const liveShipments = allShipments;
         return {
-            total: liveShipments.length,
-            inTransit: liveShipments.filter(s => s.status === 'in_transit').length,
-            delayed: liveShipments.filter(s => s.status === 'delayed').length,
-            delivered: liveShipments.filter(s => s.status === 'delivered').length,
+            total: allShipments.length,
+            inTransit: allShipments.filter(s => s.status === 'in_transit').length,
+            delayed: allShipments.filter(s => s.status === 'delayed').length,
+            delivered: allShipments.filter(s => s.status === 'delivered').length,
+            pickedUp: allShipments.filter(s => s.status === 'picked_up').length,
         }
     }, [allShipments]);
 
     const chartData = useMemo(() => {
-        const liveShipments = allShipments;
-        const statusCounts = liveShipments.reduce((acc, shipment) => {
+        const statusCounts = allShipments.reduce((acc, shipment) => {
             const status = shipment.status || "unknown";
             acc[status] = (acc[status] || 0) + 1;
             return acc;
@@ -163,7 +162,7 @@ export default function WarehouseStaffDashboard() {
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Shipments</CardTitle>
@@ -171,6 +170,15 @@ export default function WarehouseStaffDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.total}</div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Picked Up</CardTitle>
+                        <PackageCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.pickedUp}</div>
                     </CardContent>
                 </Card>
                 <Card>
