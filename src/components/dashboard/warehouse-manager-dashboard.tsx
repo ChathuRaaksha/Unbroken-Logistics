@@ -93,16 +93,18 @@ export default function WarehouseStaffDashboard() {
     const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
 
     const stats = useMemo(() => {
+        const liveShipments = allShipments;
         return {
-            total: allShipments.length,
-            inTransit: allShipments.filter(s => s.status === 'in_transit').length,
-            delayed: allShipments.filter(s => s.status === 'delayed').length,
-            delivered: allShipments.filter(s => s.status === 'delivered').length,
+            total: liveShipments.length,
+            inTransit: liveShipments.filter(s => s.status === 'in_transit').length,
+            delayed: liveShipments.filter(s => s.status === 'delayed').length,
+            delivered: liveShipments.filter(s => s.status === 'delivered').length,
         }
     }, [allShipments]);
 
     const chartData = useMemo(() => {
-        const statusCounts = allShipments.reduce((acc, shipment) => {
+        const liveShipments = allShipments;
+        const statusCounts = liveShipments.reduce((acc, shipment) => {
             const status = shipment.status || "unknown";
             acc[status] = (acc[status] || 0) + 1;
             return acc;
