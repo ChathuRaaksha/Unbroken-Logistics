@@ -26,7 +26,9 @@ export interface FetchShipmentsResult {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
+    const API_URL = 'https://cors-anywhere.herokuapp.com/https://lyy7hcxorv51baby.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
+  //const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
+   
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -77,9 +79,9 @@ export async function updateShipment(
   shipment: Shipment,
   updates: Partial<Omit<Shipment, 'id'>>
 ): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
-    const API_URL_BASE = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
+    const API_URL_BASE = 'https://cors-anywhere.herokuapp.com/https://lyy7hcxorv51baby.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
-
+// j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics
     if (!shipment?._rev) {
         return {
             success: false,
