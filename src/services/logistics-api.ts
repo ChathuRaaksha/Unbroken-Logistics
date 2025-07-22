@@ -36,7 +36,7 @@ type PendingUpdate = {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const API_URL = '/api/couchbase/_all_docs?include_docs=true&limit=500';
+    const API_URL = '/api/couchbase/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -118,7 +118,7 @@ export async function updateShipment(
 
 // The actual API call to update a document
 async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<Shipment, 'id'>>) {
-    const API_URL_BASE = '/api/couchbase/';
+    const API_URL_BASE = '/api/couchbase/unbroken-ep.scp.logistics/';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     if (!shipment?._rev) {
