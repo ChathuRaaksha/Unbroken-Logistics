@@ -1,4 +1,5 @@
 
+
 // Defines the structure of the 'logistics' object found in each document.
 export interface Shipment {
   id: string; // The document ID, used for React keys
