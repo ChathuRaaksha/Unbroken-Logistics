@@ -13,7 +13,7 @@ import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarCha
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, ResponsiveContainer, LabelList } from 'recharts';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -124,6 +124,23 @@ export default function WarehouseStaffDashboard() {
       delayed: { label: "Delayed", color: "hsl(var(--chart-3))" },
       delivered: { label: "Delivered", color: "hsl(var(--chart-4))" },
       unknown: { label: "Unknown", color: "hsl(var(--chart-5))" },
+    };
+
+    const destinationChartData = useMemo(() => {
+        const destinationCounts = allShipments.reduce((acc, shipment) => {
+            const dest = shipment.destination || "Unknown";
+            acc[dest] = (acc[dest] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return Object.entries(destinationCounts)
+            .map(([destination, count]) => ({ destination, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+    }, [allShipments]);
+
+     const destinationChartConfig: ChartConfig = {
+        count: { label: "Shipments", color: "hsl(var(--chart-1))" },
     };
     
     const handlePreviousPage = () => (currentPage > 1) && setCurrentPage(currentPage - 1);
@@ -251,30 +268,43 @@ export default function WarehouseStaffDashboard() {
                         )}
                     </CardContent>
                 </Card>
-                 <Card className="flex flex-col">
+                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Geographic Overview</CardTitle>
-                        <CardDescription>Visualizing top shipment destinations.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Top 5 Destinations</CardTitle>
+                        <CardDescription>Breakdown of the most frequent shipment destinations.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-1 flex justify-center items-center relative rounded-b-lg overflow-hidden">
+                    <CardContent>
                        {isLoading ? (
                             <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : destinationChartData.length > 0 ? (
+                            <ChartContainer config={destinationChartConfig} className="h-[300px] w-full">
+                                <BarChart accessibilityLayer data={destinationChartData} layout="vertical" margin={{ left: 10, right: 40 }}>
+                                    <CartesianGrid horizontal={false} />
+                                    <YAxis 
+                                        dataKey="destination" 
+                                        type="category"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={10}
+                                        width={80}
+                                    />
+                                    <XAxis dataKey="count" type="number" hide />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" layout="vertical" radius={5} fill="var(--color-count)">
+                                         <LabelList
+                                            dataKey="count"
+                                            position="right"
+                                            offset={8}
+                                            className="fill-foreground font-semibold"
+                                            fontSize={12}
+                                        />
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
                         ) : (
-                        <div className="relative w-full h-full aspect-video">
-                            <Image 
-                                src="https://images.unsplash.com/photo-1564540592994-54e99093e284?q=80&w=2874&auto=format&fit=crop"
-                                alt="World map"
-                                fill
-                                style={{ objectFit: 'cover' }}
-                                className="opacity-20"
-                                data-ai-hint="world map"
-                            />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-black/20">
-                                <Map className="h-12 w-12 text-background/80 mb-2" />
-                                <h3 className="text-lg font-bold text-background">Interactive Map Coming Soon</h3>
-                                <p className="text-sm text-background/90">This area will soon feature a dynamic map to pinpoint shipment locations in real-time.</p>
+                             <div className="flex justify-center items-center h-64">
+                                <p className="text-muted-foreground">No destination data available.</p>
                             </div>
-                        </div>
                         )}
                     </CardContent>
                 </Card>
