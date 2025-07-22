@@ -117,11 +117,11 @@ export default function WarehouseStaffDashboard() {
     
     const chartConfig: ChartConfig = {
       count: { label: "Shipments" },
-      picked_up: { label: "Picked Up", color: "hsl(var(--chart-1))" },
-      in_transit: { label: "In Transit", color: "hsl(var(--chart-2))" },
-      delayed: { label: "Delayed", color: "hsl(var(--chart-3))" },
-      delivered: { label: "Delivered", color: "hsl(var(--chart-4))" },
-      unknown: { label: "Unknown", color: "hsl(var(--chart-5))" },
+      picked_up: { label: "Picked Up", color: "hsl(205 90% 78%)" },
+      in_transit: { label: "In Transit", color: "hsl(221 83% 53%)" },
+      delayed: { label: "Delayed", color: "hsl(45 93% 47%)" },
+      delivered: { label: "Delivered", color: "hsl(142 76% 36%)" },
+      unknown: { label: "Unknown", color: "hsl(215 20% 65%)" },
     };
 
     const topDestinations = useMemo(() => {
