@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Map, Globe } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Map, Globe, Pin } from "lucide-react";
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -18,6 +18,30 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+
+const WorldMap = ({ topDestinations }: { topDestinations: { name: string, count: number, x: string, y: string }[] }) => (
+    <div className="relative w-full h-full aspect-video">
+        <svg viewBox="0 0 1000 500" className="w-full h-full">
+            <image href="https://raw.githubusercontent.com/djaiss/mapsicon/master/world.svg" width="1000" height="500" className="opacity-20" />
+            {topDestinations.map((city, index) => (
+                 <g key={index} transform={`translate(${city.x}, ${city.y})`}>
+                    <circle cx="0" cy="0" r="10" fill="hsl(var(--primary))" className="animate-pulse" />
+                    <circle cx="0" cy="0" r="5" fill="hsl(var(--primary))" />
+                    <text
+                        x="15"
+                        y="5"
+                        fontSize="14"
+                        fill="hsl(var(--foreground))"
+                        className="font-semibold"
+                    >
+                        {city.name} ({city.count})
+                    </text>
+                </g>
+            ))}
+        </svg>
+    </div>
+);
+
 
 export default function WarehouseStaffDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
@@ -93,24 +117,56 @@ export default function WarehouseStaffDashboard() {
 
     const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
 
-    const stats = useMemo(() => {
+     const stats = useMemo(() => {
+        const source = allShipments; // Use all shipments from the latest fetch
         return {
-            total: allShipments.length,
-            inTransit: allShipments.filter(s => s.status === 'in_transit').length,
-            delayed: allShipments.filter(s => s.status === 'delayed').length,
-            delivered: allShipments.filter(s => s.status === 'delivered').length,
-            pickedUp: allShipments.filter(s => s.status === 'picked_up').length,
+            total: source.length,
+            inTransit: source.filter(s => s.status === 'in_transit').length,
+            delayed: source.filter(s => s.status === 'delayed').length,
+            delivered: source.filter(s => s.status === 'delivered').length,
+            pickedUp: source.filter(s => s.status === 'picked_up').length,
         }
     }, [allShipments]);
 
+
     const statusChartData = useMemo(() => {
-        const statusCounts = allShipments.reduce((acc, shipment) => {
+        const source = allShipments;
+        const statusCounts = source.reduce((acc, shipment) => {
             const status = shipment.status || "unknown";
             acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
         return Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+    }, [allShipments]);
+    
+    const topDestinations = useMemo(() => {
+        const cityCoordinates: { [key: string]: { x: string, y: string } } = {
+            'stockholm': { x: '55%', y: '25%' },
+            'gothenburg': { x: '54%', y: '28%' },
+            'new york': { x: '25%', y: '40%' },
+            'santa elena': { x: '20%', y: '65%' },
+            'tokyo': { x: '85%', y: '42%' },
+            'london': { x: '50%', y: '32%' },
+        };
+        
+        const counts = allShipments.reduce((acc, s) => {
+            const dest = s.destination.toLowerCase();
+            if (cityCoordinates[dest]) {
+                acc[s.destination] = (acc[s.destination] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+
+        return Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, count]) => ({
+                name,
+                count,
+                ...cityCoordinates[name.toLowerCase()]
+            }));
+
     }, [allShipments]);
 
     const chartConfig: ChartConfig = {
@@ -250,28 +306,17 @@ export default function WarehouseStaffDashboard() {
                  <Card className="flex flex-col">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Geographic Overview</CardTitle>
-                        <CardDescription>Visualizing shipment origins on the world map.</CardDescription>
+                        <CardDescription>Visualizing top shipment destinations.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 flex justify-center items-center relative">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : topDestinations.length > 0 ? (
+                            <WorldMap topDestinations={topDestinations} />
                         ) : (
-                            <div className="relative w-full h-full aspect-video">
-                                <Image
-                                    src="https://placehold.co/800x400.png"
-                                    alt="World Map Placeholder"
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className="rounded-md opacity-20"
-                                    data-ai-hint="world map"
-                                />
-                                <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4">
-                                    <Globe className="h-16 w-16 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold text-foreground">Interactive Map Coming Soon</h3>
-                                    <p className="text-sm text-muted-foreground max-w-xs">
-                                        This area will soon feature a dynamic map to pinpoint shipment locations in real-time.
-                                    </p>
-                                </div>
+                            <div className="flex flex-col items-center justify-center text-center text-muted-foreground">
+                                <Globe className="h-12 w-12 mb-2" />
+                                <p>No destination data available to display on the map.</p>
                             </div>
                         )}
                     </CardContent>
@@ -478,5 +523,8 @@ export default function WarehouseStaffDashboard() {
             </Dialog>
         </div>
     );
+
+    
+}
 
     
