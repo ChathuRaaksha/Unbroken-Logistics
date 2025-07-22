@@ -36,7 +36,7 @@ type PendingUpdate = {
  * @returns A promise that resolves to an object containing the shipments array and an isOnline status.
  */
 export async function fetchAllShipments(): Promise<FetchShipmentsResult> {
-    const API_URL = '/api/couchbase/_all_docs?include_docs=true&limit=500';
+    const API_URL = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/_all_docs?include_docs=true&limit=500';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
 
     try {
@@ -84,43 +84,9 @@ export async function updateShipment(
   shipment: Shipment,
   updates: Partial<Omit<Shipment, 'id'>>
 ): Promise<{ success: boolean; message: string; updatedShipment?: Shipment }> {
-    const isOnline = navigator.onLine;
-
-    // Optimistically update the local cache
-    const cachedData = localStorage.getItem(SHIPMENTS_CACHE_KEY);
-    const shipments: Shipment[] = cachedData ? JSON.parse(cachedData) : [];
-    const updatedShipment = { ...shipment, ...updates, timestamp: new Date().toISOString() };
-    const newShipments = shipments.map(s => s.id === shipment.id ? updatedShipment : s);
-    localStorage.setItem(SHIPMENTS_CACHE_KEY, JSON.stringify(newShipments));
-
-    if (isOnline) {
-        // Try to update live
-        const result = await apiUpdateShipmentLive(shipment, updates);
-        if (!result.success) {
-            // If live update fails, queue it for later
-            queueUpdateForSync(shipment.id, updates);
-            return { ...result, message: `Live update failed: ${result.message}. Update queued.` };
-        }
-        // Success, refresh the cache with the server's response
-        const finalShipments = shipments.map(s => s.id === result.updatedShipment!.id ? result.updatedShipment! : s);
-        localStorage.setItem(SHIPMENTS_CACHE_KEY, JSON.stringify(finalShipments));
-        return { ...result, updatedShipment: result.updatedShipment };
-    } else {
-        // Offline, just queue the update
-        queueUpdateForSync(shipment.id, updates);
-        return { 
-            success: true, 
-            message: "Offline. Update has been saved and will sync later.",
-            updatedShipment
-        };
-    }
-}
-
-// The actual API call to update a document
-async function apiUpdateShipmentLive(shipment: Shipment, updates: Partial<Omit<Shipment, 'id'>>) {
-    const API_URL_BASE = '/api/couchbase/';
+    const API_URL_BASE = 'https://cors-anywhere.herokuapp.com/https://j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics/';
     const basicAuth = 'Y2hhb3NfY29kZXJfMDE6VWskN1FrV3E3VTJ5aUhD';
-
+// j6i1elyshnwlu6jo.apps.cloud.couchbase.com:4984/unbroken-ep.scp.logistics
     if (!shipment?._rev) {
         return { success: false, message: 'Document is missing a revision number.' };
     }
