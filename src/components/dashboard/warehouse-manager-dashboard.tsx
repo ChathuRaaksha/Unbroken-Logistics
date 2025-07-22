@@ -9,15 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Map, Globe } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Globe } from "lucide-react";
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, ResponsiveContainer, LabelList } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, ResponsiveContainer } from 'recharts';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
+import { WorldMap } from './world-map';
 
 
 export default function WarehouseStaffDashboard() {
@@ -95,7 +95,7 @@ export default function WarehouseStaffDashboard() {
     const totalPages = useMemo(() => Math.ceil(filteredShipments.length / rowsPerPage), [filteredShipments, rowsPerPage]);
 
      const stats = useMemo(() => {
-        const source = allShipments; // Use all shipments from the latest fetch
+        const source = allShipments;
         return {
             total: source.length,
             inTransit: source.filter(s => s.status === 'in_transit').length,
@@ -126,7 +126,7 @@ export default function WarehouseStaffDashboard() {
       unknown: { label: "Unknown", color: "hsl(var(--chart-5))" },
     };
 
-    const destinationChartData = useMemo(() => {
+    const topDestinations = useMemo(() => {
         const destinationCounts = allShipments.reduce((acc, shipment) => {
             const dest = shipment.destination || "Unknown";
             acc[dest] = (acc[dest] || 0) + 1;
@@ -134,14 +134,10 @@ export default function WarehouseStaffDashboard() {
         }, {} as Record<string, number>);
 
         return Object.entries(destinationCounts)
-            .map(([destination, count]) => ({ destination, count }))
+            .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 5);
     }, [allShipments]);
-
-     const destinationChartConfig: ChartConfig = {
-        count: { label: "Shipments", color: "hsl(var(--chart-1))" },
-    };
     
     const handlePreviousPage = () => (currentPage > 1) && setCurrentPage(currentPage - 1);
     const handleNextPage = () => (currentPage < totalPages) && setCurrentPage(currentPage + 1);
@@ -270,39 +266,16 @@ export default function WarehouseStaffDashboard() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Top 5 Destinations</CardTitle>
-                        <CardDescription>Breakdown of the most frequent shipment destinations.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Geographic Overview</CardTitle>
+                        <CardDescription>Top shipment destinations by volume.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-0 relative h-[324px]">
                        {isLoading ? (
                             <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : destinationChartData.length > 0 ? (
-                            <ChartContainer config={destinationChartConfig} className="h-[300px] w-full">
-                                <BarChart accessibilityLayer data={destinationChartData} layout="vertical" margin={{ left: 10, right: 40 }}>
-                                    <CartesianGrid horizontal={false} />
-                                    <YAxis 
-                                        dataKey="destination" 
-                                        type="category"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={10}
-                                        width={80}
-                                    />
-                                    <XAxis dataKey="count" type="number" hide />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" layout="vertical" radius={5} fill="var(--color-count)">
-                                         <LabelList
-                                            dataKey="count"
-                                            position="right"
-                                            offset={8}
-                                            className="fill-foreground font-semibold"
-                                            fontSize={12}
-                                        />
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
+                        ) : topDestinations.length > 0 ? (
+                            <WorldMap data={topDestinations} />
                         ) : (
-                             <div className="flex justify-center items-center h-64">
+                             <div className="flex justify-center items-center h-full">
                                 <p className="text-muted-foreground">No destination data available.</p>
                             </div>
                         )}
@@ -513,5 +486,3 @@ export default function WarehouseStaffDashboard() {
 
     
 }
-
-    
