@@ -9,11 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Map } from "lucide-react";
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, Legend } from 'recharts';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -102,7 +102,7 @@ export default function WarehouseStaffDashboard() {
         }
     }, [allShipments]);
 
-    const chartData = useMemo(() => {
+    const statusChartData = useMemo(() => {
         const statusCounts = allShipments.reduce((acc, shipment) => {
             const status = shipment.status || "unknown";
             acc[status] = (acc[status] || 0) + 1;
@@ -112,13 +112,27 @@ export default function WarehouseStaffDashboard() {
         return Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
     }, [allShipments]);
 
+    const geoChartData = useMemo(() => {
+        const originData = allShipments.reduce((acc, shipment) => {
+            const origin = shipment.origin || 'Unknown';
+            if (!acc[origin]) {
+                acc[origin] = { origin, picked_up: 0, in_transit: 0, delayed: 0, delivered: 0 };
+            }
+            acc[origin][shipment.status as keyof typeof acc[string]]++;
+            return acc;
+        }, {} as Record<string, any>);
+
+        return Object.values(originData);
+    }, [allShipments]);
+
+
     const chartConfig: ChartConfig = {
       count: { label: "Shipments" },
-      in_transit: { color: "hsl(var(--chart-1))" },
-      delivered: { color: "hsl(var(--chart-2))" },
-      delayed: { color: "hsl(var(--chart-3))" },
-      picked_up: { color: "hsl(var(--chart-4))" },
-      unknown: { color: "hsl(var(--chart-5))" },
+      picked_up: { label: "Picked Up", color: "hsl(var(--chart-1))" },
+      in_transit: { label: "In Transit", color: "hsl(var(--chart-2))" },
+      delayed: { label: "Delayed", color: "hsl(var(--chart-3))" },
+      delivered: { label: "Delivered", color: "hsl(var(--chart-4))" },
+      unknown: { label: "Unknown", color: "hsl(var(--chart-5))" },
     };
     
     const handlePreviousPage = () => (currentPage > 1) && setCurrentPage(currentPage - 1);
@@ -210,41 +224,79 @@ export default function WarehouseStaffDashboard() {
                 </Card>
             </div>
             
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><BarChartIcon className="h-6 w-6" /> Shipment Status Overview</CardTitle>
-                    <CardDescription>A summary of all shipments by their current status.</CardDescription>
-                </CardHeader>
-                <CardContent className="pl-2">
-                    {isLoading ? (
-                        <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : chartData.length > 0 ? (
-                        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                            <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 5, left: -10 }}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis 
-                                    dataKey="status" 
-                                    tickLine={false} 
-                                    tickMargin={10} 
-                                    axisLine={false}
-                                    tickFormatter={(value) => value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                />
-                                <YAxis allowDecimals={false} />
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="count" radius={4}>
-                                    {chartData.map((entry) => (
-                                        <Cell key={`cell-${entry.status}`} fill={chartConfig[entry.status as keyof typeof chartConfig]?.color || "hsl(var(--chart-1))"} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ChartContainer>
-                    ) : (
-                        <div className="flex justify-center items-center h-64">
-                            <p className="text-muted-foreground">No chart data available.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BarChartIcon className="h-6 w-6" /> Shipment Status Overview</CardTitle>
+                        <CardDescription>A summary of all shipments by their current status.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : statusChartData.length > 0 ? (
+                            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                                <BarChart accessibilityLayer data={statusChartData} margin={{ top: 20, right: 20, bottom: 5, left: -10 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis 
+                                        dataKey="status" 
+                                        tickLine={false} 
+                                        tickMargin={10} 
+                                        axisLine={false}
+                                        tickFormatter={(value) => value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    />
+                                    <YAxis allowDecimals={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" radius={4}>
+                                        {statusChartData.map((entry) => (
+                                            <Cell key={`cell-${entry.status}`} fill={chartConfig[entry.status as keyof typeof chartConfig]?.color || "hsl(var(--chart-5))"} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        ) : (
+                            <div className="flex justify-center items-center h-64">
+                                <p className="text-muted-foreground">No chart data available.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Map className="h-6 w-6" /> Shipments by Origin</CardTitle>
+                        <CardDescription>A summary of shipment statuses grouped by origin.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        {isLoading ? (
+                             <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : geoChartData.length > 0 ? (
+                            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                                <BarChart accessibilityLayer data={geoChartData} layout="vertical" margin={{ top: 20, right: 20, bottom: 5, left: 10 }}>
+                                    <CartesianGrid horizontal={false} />
+                                    <YAxis 
+                                        dataKey="origin" 
+                                        type="category"
+                                        tickLine={false} 
+                                        tickMargin={10} 
+                                        axisLine={false}
+                                        width={80}
+                                    />
+                                    <XAxis type="number" allowDecimals={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Legend />
+                                    <Bar dataKey="picked_up" stackId="a" fill={chartConfig.picked_up.color} radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="in_transit" stackId="a" fill={chartConfig.in_transit.color} />
+                                    <Bar dataKey="delayed" stackId="a" fill={chartConfig.delayed.color} />
+                                    <Bar dataKey="delivered" stackId="a" fill={chartConfig.delivered.color} radius={[4, 0, 0, 4]}/>
+                                </BarChart>
+                            </ChartContainer>
+                        ) : (
+                             <div className="flex justify-center items-center h-64">
+                                <p className="text-muted-foreground">No geographical data available.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
 
             <Card>
                 <CardHeader>
@@ -447,3 +499,5 @@ export default function WarehouseStaffDashboard() {
         </div>
     );
 }
+
+    
