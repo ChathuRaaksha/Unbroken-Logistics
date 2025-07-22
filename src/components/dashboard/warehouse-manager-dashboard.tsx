@@ -272,8 +272,8 @@ export default function WarehouseStaffDashboard() {
                     <CardContent className="p-0 relative h-[324px]">
                        {isLoading ? (
                             <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : topDestinations.length > 0 ? (
-                            <WorldMap data={topDestinations} />
+                        ) : allShipments.length > 0 ? (
+                            <WorldMap data={allShipments} />
                         ) : (
                              <div className="flex justify-center items-center h-full">
                                 <p className="text-muted-foreground">No destination data available.</p>

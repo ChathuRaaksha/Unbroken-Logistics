@@ -1,7 +1,8 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import type { Shipment } from '@/services/logistics-api';
 
 type CityCoordinates = {
   [key: string]: { x: number; y: number };
@@ -16,10 +17,25 @@ const cityCoordinates: CityCoordinates = {
 };
 
 type WorldMapProps = {
-  data: { name: string; count: number }[];
+  data: Shipment[];
 };
 
 export const WorldMap: React.FC<WorldMapProps> = ({ data }) => {
+  const destinationData = useMemo(() => {
+    const destinationCounts = data.reduce((acc, shipment) => {
+      const dest = shipment.destination;
+      if (cityCoordinates[dest]) {
+        acc[dest] = (acc[dest] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(destinationCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [data]);
+
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-muted/20">
       <svg viewBox="0 0 1009 665" className="max-w-full max-h-full">
@@ -29,7 +45,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({ data }) => {
           fill="#D6D6D6"
         />
         {/* Render pins for each city in the data */}
-        {data.map(({ name, count }) => {
+        {destinationData.map(({ name, count }) => {
           const coords = cityCoordinates[name];
           if (!coords) return null;
 
