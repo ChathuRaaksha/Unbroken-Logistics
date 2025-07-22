@@ -9,14 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Map } from "lucide-react";
+import { Loader2, Search, AlertCircle, Package, Truck, Timer, BarChart as BarChartIcon, CheckCircle as CheckCircleIcon, Edit, X, PackageCheck, Map, Globe } from "lucide-react";
 import { fetchAllShipments, Shipment, FetchShipmentsResult, updateShipment } from '@/services/logistics-api';
 import { useAuth } from "@/hooks/use-auth";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, Legend } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 export default function WarehouseStaffDashboard() {
     const [allShipments, setAllShipments] = useState<Shipment[]>([]);
@@ -111,20 +112,6 @@ export default function WarehouseStaffDashboard() {
 
         return Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
     }, [allShipments]);
-
-    const geoChartData = useMemo(() => {
-        const originData = allShipments.reduce((acc, shipment) => {
-            const origin = shipment.origin || 'Unknown';
-            if (!acc[origin]) {
-                acc[origin] = { origin, picked_up: 0, in_transit: 0, delayed: 0, delivered: 0 };
-            }
-            acc[origin][shipment.status as keyof typeof acc[string]]++;
-            return acc;
-        }, {} as Record<string, any>);
-
-        return Object.values(originData);
-    }, [allShipments]);
-
 
     const chartConfig: ChartConfig = {
       count: { label: "Shipments" },
@@ -260,38 +247,31 @@ export default function WarehouseStaffDashboard() {
                         )}
                     </CardContent>
                 </Card>
-                <Card>
+                 <Card className="flex flex-col">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Map className="h-6 w-6" /> Shipments by Origin</CardTitle>
-                        <CardDescription>A summary of shipment statuses grouped by origin.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Globe className="h-6 w-6" /> Geographic Overview</CardTitle>
+                        <CardDescription>Visualizing shipment origins on the world map.</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2">
+                    <CardContent className="flex-1 flex justify-center items-center relative">
                         {isLoading ? (
-                             <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : geoChartData.length > 0 ? (
-                            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                                <BarChart accessibilityLayer data={geoChartData} layout="vertical" margin={{ top: 20, right: 20, bottom: 5, left: 10 }}>
-                                    <CartesianGrid horizontal={false} />
-                                    <YAxis 
-                                        dataKey="origin" 
-                                        type="category"
-                                        tickLine={false} 
-                                        tickMargin={10} 
-                                        axisLine={false}
-                                        width={80}
-                                    />
-                                    <XAxis type="number" allowDecimals={false} />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Legend />
-                                    <Bar dataKey="picked_up" stackId="a" fill={chartConfig.picked_up.color} radius={[0, 4, 4, 0]} />
-                                    <Bar dataKey="in_transit" stackId="a" fill={chartConfig.in_transit.color} />
-                                    <Bar dataKey="delayed" stackId="a" fill={chartConfig.delayed.color} />
-                                    <Bar dataKey="delivered" stackId="a" fill={chartConfig.delivered.color} radius={[4, 0, 0, 4]}/>
-                                </BarChart>
-                            </ChartContainer>
+                            <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                         ) : (
-                             <div className="flex justify-center items-center h-64">
-                                <p className="text-muted-foreground">No geographical data available.</p>
+                            <div className="relative w-full h-full aspect-video">
+                                <Image
+                                    src="https://placehold.co/800x400.png"
+                                    alt="World Map Placeholder"
+                                    layout="fill"
+                                    objectFit="cover"
+                                    className="rounded-md opacity-20"
+                                    data-ai-hint="world map"
+                                />
+                                <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4">
+                                    <Globe className="h-16 w-16 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold text-foreground">Interactive Map Coming Soon</h3>
+                                    <p className="text-sm text-muted-foreground max-w-xs">
+                                        This area will soon feature a dynamic map to pinpoint shipment locations in real-time.
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </CardContent>
@@ -498,6 +478,5 @@ export default function WarehouseStaffDashboard() {
             </Dialog>
         </div>
     );
-}
 
     
